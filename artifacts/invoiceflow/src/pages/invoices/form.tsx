@@ -96,11 +96,33 @@ export default function InvoiceForm() {
 
   useEffect(() => {
     if (isEditing && existingInvoice) {
+      // Strip null values → undefined so Zod optional() fields pass validation
+      const sanitize = (v: unknown) => (v === null ? undefined : v);
       form.reset({
-        ...existingInvoice,
+        customerId: existingInvoice.customerId ?? undefined,
+        customerName: existingInvoice.customerName ?? "",
+        customerEmail: sanitize(existingInvoice.customerEmail) as string | undefined,
+        customerPhone: sanitize(existingInvoice.customerPhone) as string | undefined,
+        customerAddress: sanitize(existingInvoice.customerAddress) as string | undefined,
+        customerGstin: sanitize(existingInvoice.customerGstin) as string | undefined,
+        invoiceNumber: existingInvoice.invoiceNumber,
         invoiceDate: existingInvoice.invoiceDate.split('T')[0],
         dueDate: existingInvoice.dueDate ? existingInvoice.dueDate.split('T')[0] : undefined,
-      } as any);
+        discountType: (existingInvoice.discountType as "percent" | "flat") ?? "flat",
+        discountValue: existingInvoice.discountValue ?? 0,
+        taxPercent: existingInvoice.taxPercent ?? 0,
+        notes: sanitize(existingInvoice.notes) as string | undefined,
+        paymentTerms: sanitize(existingInvoice.paymentTerms) as string | undefined,
+        showBankDetails: existingInvoice.showBankDetails ?? true,
+        status: (existingInvoice.status as "draft" | "sent" | "paid" | "overdue") ?? "draft",
+        items: (existingInvoice.items ?? []).map(item => ({
+          name: item.name,
+          description: sanitize(item.description) as string | undefined,
+          quantity: item.quantity,
+          unit: item.unit,
+          rate: item.rate,
+        })),
+      });
     } else if (!isEditing && nextNum && profile) {
       form.setValue("invoiceNumber", nextNum.invoiceNumber);
       form.setValue("taxPercent", profile.defaultTaxPercent);
