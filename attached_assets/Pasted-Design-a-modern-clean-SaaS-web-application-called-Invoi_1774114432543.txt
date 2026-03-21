@@ -1,0 +1,641 @@
+Design a modern, clean SaaS web application called "InvoiceFlow" (or similar) 
+for Indian shopkeepers and freelancers to create and manage invoices.
+
+---
+
+## PRODUCT OVERVIEW
+A simple, professional invoice generation SaaS. Target users are small Indian 
+shop owners, freelancers, and solo service providers who need to create, send, 
+and track invoices without any accounting complexity.
+
+---
+
+## TARGET AUDIENCE
+- Age: 22–50
+- Tech-savviness: Low to medium
+- Devices: Primarily mobile (60%), desktop (40%)
+- Needs: Speed, simplicity, professional-looking output
+- Location: India
+
+---
+
+## VISUAL STYLE
+- Clean, minimal, and trustworthy — like Razorpay or Zoho's newer UI
+- Primary color: Deep Indigo (#4F46E5) or Teal (#0D9488)
+- Accent color: Amber/Orange for CTAs (#F59E0B)
+- Background: Soft white/light gray (#F9FAFB)
+- Font: Inter or Plus Jakarta Sans — modern, readable
+- Tone: Professional but approachable, not intimidating for non-tech users
+- Style reference: Refrens.com, Stripe Dashboard — clean cards, lots of whitespace
+- Mobile-first design
+
+---
+
+## PAGES & SECTIONS
+
+### 1. Landing Page (Marketing)
+- Sticky navbar: Logo | Features | Pricing | Login | Get Started (CTA button)
+- Hero section: Bold headline, subheadline, CTA button "Create Free Invoice",
+  mockup of invoice on phone/laptop
+- Feature highlights: 3–4 cards (PDF Invoice, WhatsApp Share, Customer Directory,
+  Sales Dashboard)
+- How it works: 3-step visual (Set up profile → Create invoice → Share instantly)
+- Invoice preview sample (showing a clean generated invoice)
+- Testimonial section (placeholder)
+- Footer: Links, social, copyright
+
+### 2. Authentication Pages
+- Sign Up: Email + Password, Google OAuth button, link to Login
+- Login: Email + Password, Google OAuth, Forgot Password link
+- Minimal centered card layout, brand logo on top
+
+### 3. Onboarding — Business Profile Setup
+- Step 1: Shop/Business name, owner name, phone, email
+- Step 2: Address, city, state, PIN code, GSTIN (optional/skippable)
+- Step 3: Logo upload, bank details (account no., IFSC, bank name),
+  invoice number prefix
+- Progress bar at the top, "Skip for now" option on optional steps
+
+### 4. Dashboard (Home)
+- Top stat cards: Total Revenue | Paid Invoices | Pending Amount | Overdue Count
+- Monthly revenue bar chart (last 6 months)
+- Recent invoices table (last 5): invoice no., customer, amount, status, date
+- Quick action buttons: "+ New Invoice", "View All Invoices", "Add Customer"
+- Top customers widget (by revenue)
+- Mobile: Cards stacked vertically, bottom navigation bar
+
+### 5. Invoices List Page
+- Search bar + filter by status (All / Paid / Pending / Draft / Overdue)
+- Date range filter
+- Invoice cards/table: Invoice no., Customer name, Date, Due date, Amount, 
+  Status badge
+- Status badges: Green (Paid), Yellow (Pending), Red (Overdue), Gray (Draft)
+- Tap/click to open invoice detail
+- FAB button (floating): "+ New Invoice"
+
+### 6. Create / Edit Invoice Page
+- Two-column layout (desktop) / stacked (mobile)
+- Left/Top:
+  - Invoice number (auto-generated, editable)
+  - Invoice date + Due date pickers
+  - Bill To: searchable dropdown from customer directory + "Add New Customer"
+- Line Items section:
+  - Table: Item name (autocomplete from product library) | Qty | Unit | Rate | Amount
+  - Add row button, delete row button
+  - Inline editing
+- Right/Bottom:
+  - Subtotal
+  - Discount field (% or flat)
+  - Tax field (% — simple)
+  - Total (large, bold)
+- Notes / Payment terms text area
+- Bank details toggle (show/hide on invoice)
+- Action bar: "Save Draft" | "Preview" | "Save & Share"
+
+### 7. Invoice Preview / Detail Page
+- Full rendered invoice preview (as it will appear in PDF):
+  - Business logo + details (top left)
+  - Invoice number + dates (top right)
+  - Bill To section
+  - Line items table
+  - Totals section
+  - Notes
+  - Bank details
+  - "Thank you" footer
+- Action buttons: Download PDF | Share | Edit | Mark as Paid | Delete
+- Share button opens Share Modal
+
+### 8. Share Modal (Critical UX Component)
+- Triggered from invoice preview/detail page
+- Options displayed as large tappable buttons (mobile-friendly):
+  
+  [ 💬 WhatsApp ]
+  Subtext: "Send PDF directly to WhatsApp"
+  → On tap: fetches PDF, opens native OS share sheet with PDF file attached
+  → On desktop: shows download prompt with instruction to attach manually
+  
+  [ 📧 Email ]
+  Subtext: "Send to customer's email"
+  → Pre-fills recipient from customer email
+  → PDF attached automatically
+  
+  [ 📋 Copy Link ]
+  Subtext: "Share invoice view link"
+  → Copies public invoice URL to clipboard
+  → Toast: "Link copied!"
+  
+  [ 📥 Download PDF ]
+  Subtext: "Save to your device"
+  → Direct PDF download
+
+- Mobile: Rendered as a bottom sheet sliding up from bottom
+- Desktop: Rendered as a centered modal
+- Show a small info note under WhatsApp button on desktop:
+  "PDF will be downloaded — attach it manually in WhatsApp"
+
+### 9. Customers Page
+- Search customers
+- Customer cards/list: Name, phone, email, total invoices, total billed
+- Add New Customer button
+- Click customer → Customer Detail page
+
+### 10. Customer Detail Page
+- Customer info card (editable)
+- Invoice history for that customer (filterable)
+- Total billed, total paid, outstanding amount
+
+### 11. Products / Services Library
+- List of saved items with name, default rate, unit
+- Add/edit/delete items
+- Used for autocomplete in invoice line items
+
+### 12. Settings Page
+- Tabs: Business Profile | Invoice Settings | Account
+- Business profile: Edit all onboarding fields, re-upload logo, signature
+- Invoice settings: Default notes, default payment terms, invoice prefix,
+  default tax %
+
+---
+
+## UI COMPONENTS NEEDED
+- Navbar (desktop sidebar + mobile bottom nav)
+- Stat cards with icons and trend indicators
+- Data tables with sort/filter
+- Invoice line item editor (dynamic rows)
+- Status badges (color-coded)
+- Share modal / bottom sheet (mobile) — with WhatsApp, Email, Copy, Download
+- PDF preview panel
+- File upload (logo, signature)
+- Searchable dropdown (customer/product select)
+- Date picker
+- Step-progress onboarding flow
+- Toast notifications
+- Confirmation modals (delete, mark paid)
+- Empty state illustrations
+
+---
+
+## RESPONSIVENESS
+- Mobile-first layout
+- Desktop: Sidebar navigation (collapsible), two-column invoice editor
+- Mobile: Bottom tab bar, full-screen modals, stacked single-column layouts
+- Invoice preview: Scrollable preview on mobile, side panel on desktop
+- Share modal: Bottom sheet on mobile, centered modal on desktop
+
+---
+
+## MOOD
+Professional, fast, friendly. Should make a shopkeeper in Jaipur or a
+freelancer in Bangalore feel like they have a powerful business tool in
+their hands — without any complexity.
+
+# PROJECT BRIEF — InvoiceFlow SaaS
+
+## Overview
+Build a full-stack SaaS web application for Indian shopkeepers and freelancers
+to create professional PDF invoices, manage customers, track sales, and share
+invoices instantly via WhatsApp (as actual PDF file) or Email. The MVP should
+be simple, fast, and mobile-friendly. No GST computation logic required at launch.
+
+---
+
+## TECH STACK
+
+| Layer          | Technology                       | Reason                              |
+|----------------|----------------------------------|-------------------------------------|
+| Frontend       | Next.js 14 (App Router)          | SSR, routing, API routes            |
+| Styling        | Tailwind CSS + shadcn/ui         | Fast, consistent, mobile-first UI   |
+| Auth           | Supabase Auth                    | Google OAuth + email, easy setup    |
+| Database       | Supabase (PostgreSQL)            | Relational, real-time, free tier    |
+| File Storage   | Supabase Storage                 | Logo, signature uploads             |
+| PDF Generation | @react-pdf/renderer              | Server-side PDF generation          |
+| Charts         | Recharts                         | Lightweight dashboard charts        |
+| Email          | Resend.com                       | Invoice email with PDF attachment   |
+| Sharing        | Web Share API (navigator.share)  | Native OS share sheet with PDF file |
+| Hosting        | Vercel                           | Free tier, instant deploys          |
+
+---
+
+## FULL SITEMAP
+
+/                          → Landing Page
+/login                     → Login
+/signup                    → Sign Up
+/onboarding                → Business Setup (3 steps)
+/dashboard                 → Home Dashboard
+/invoices                  → All Invoices
+/invoices/new              → Create Invoice
+/invoices/[id]             → Invoice Detail / Preview
+/invoices/[id]/edit        → Edit Invoice
+/customers                 → Customer Directory
+/customers/[id]            → Customer Detail
+/products                  → Product/Service Library
+/settings                  → Settings (profile, invoice, account)
+/api/invoices/pdf/[id]     → PDF generation endpoint
+
+---
+
+## DATABASE SCHEMA
+
+### users (managed by Supabase Auth)
+- id, email, created_at
+
+### business_profiles
+- id, user_id (FK), shop_name, owner_name, email, phone
+- address, city, state, pincode, gstin (nullable)
+- website (nullable), logo_url, signature_url
+- bank_name, account_number, ifsc_code, account_holder
+- invoice_prefix (default: "INV"), invoice_start_number (default: 1)
+- default_tax_percent, default_notes, default_payment_terms
+- created_at, updated_at
+
+### customers
+- id, user_id (FK), name, business_name (nullable)
+- email (nullable), phone, address (nullable)
+- city, state, gstin (nullable)
+- created_at, updated_at
+
+### products (saved items library)
+- id, user_id (FK), name, description, default_rate, unit
+- created_at
+
+### invoices
+- id, user_id (FK), customer_id (FK)
+- invoice_number, invoice_date, due_date
+- status (ENUM: draft, sent, paid, overdue)
+- subtotal, discount_type (percent/flat), discount_value
+- tax_percent, tax_amount, total
+- notes, payment_terms, show_bank_details (boolean)
+- created_at, updated_at
+
+### invoice_items
+- id, invoice_id (FK), product_id (FK, nullable)
+- name, description (nullable), quantity, unit, rate, amount
+
+---
+
+## FEATURE SPECIFICATIONS
+
+### 1. Authentication
+- Email/password sign up + login
+- Google OAuth
+- Protected routes (redirect to /login if not authenticated)
+- Auto-redirect to /onboarding if business_profile not yet set up
+
+### 2. Business Profile / Onboarding
+- 3-step form: Basic Info → Address & GSTIN → Branding & Bank Details
+- Logo upload (stored in Supabase Storage, public URL saved in DB)
+- Digital signature upload (optional)
+- All fields editable later from /settings
+- Invoice number auto-increments per user (stored in business_profiles)
+
+### 3. Customer Directory
+- Full CRUD (Create, Read, Update, Delete)
+- Search by name, phone, email
+- Customer detail page shows invoice history + total billed, paid, outstanding
+- Used as searchable select in invoice creation
+
+### 4. Product / Service Library
+- Full CRUD
+- Saved items appear as autocomplete suggestions in invoice line items
+- Fields: Name, description, rate, unit (piece, hour, kg, month, etc.)
+
+### 5. Invoice Creation
+- Select existing customer or create new inline
+- Dynamic line items (add/remove rows):
+  - Item name (autocomplete from product library)
+  - Description (optional)
+  - Qty, Unit, Rate → auto-calculate Amount
+- Subtotal auto-calculated
+- Optional discount: flat (₹) or percentage (%)
+- Optional tax: single percentage field applied on discounted subtotal
+- Final total auto-calculated in real time
+- Invoice number: auto-generated (prefix + incrementing number), editable
+- Invoice date defaults to today, due date is optional
+- Notes and payment terms text fields
+- Toggle: show/hide bank details on invoice
+- Save as Draft or Save & Preview
+
+### 6. PDF Generation
+- Endpoint: GET /api/invoices/pdf/[id]
+- Server-side rendered using @react-pdf/renderer
+- Validate that the requesting user owns the invoice before returning PDF
+- Professional invoice layout:
+  - Business logo (top left) + "TAX INVOICE" label + Number + Dates (top right)
+  - Business details block (name, address, phone, email, GSTIN if set)
+  - "Bill To" customer block (name, address, phone, email, GSTIN if set)
+  - Line items table: #, Item, Description, Qty, Unit, Rate, Amount
+  - Totals section: Subtotal | Discount | Tax | Total (bold, large)
+  - Notes section
+  - Bank details section (if toggled on)
+  - Footer: "Thank you for your business" + business website
+- Return as binary stream: Content-Type: application/pdf
+- Filename header: Invoice-[number].pdf
+
+### 7. Invoice Sharing (Web Share API — PDF as File)
+
+#### CORE APPROACH: navigator.share() with PDF File
+The app uses the browser-native Web Share API to share the actual PDF
+file — not a link. This opens the native OS share sheet on mobile where
+the user can pick WhatsApp, and the PDF is delivered as a real file
+attachment in the chat.
+
+#### Share Modal Options:
+
+**A. WhatsApp (Primary — Mobile)**
+- Fetch PDF blob: GET /api/invoices/pdf/[id]
+- Create File object from blob:
+  new File([blob], "Invoice-INV001.pdf", { type: "application/pdf" })
+- Trigger native share sheet:
+  navigator.share({
+    title: "Invoice INV-001",
+    text: "Hi [Customer Name], please find your Invoice INV-001
+           for ₹[Total]. Due date: [Due Date]. — [Shop Name]",
+    files: [pdfFile]
+  })
+- Always check navigator.canShare({ files: [pdfFile] }) before calling
+- This opens WhatsApp (or any app) with the PDF attached as a real file
+- The customer receives the PDF directly in their WhatsApp chat
+
+**B. Desktop / Unsupported Browser Fallback**
+- If navigator.canShare is not supported or files sharing not supported:
+  - Auto-trigger PDF download to device
+  - Show toast notification:
+    "PDF downloaded! Open WhatsApp and attach the file to send it."
+  - Optionally show a QR code that opens the invoice on their phone
+    so they can share from mobile
+
+**C. Email**
+- Pre-fill recipient from customer's saved email address
+- Call POST /api/invoices/[id]/send-email
+- Server fetches PDF, attaches it to email via Resend API
+- Subject: "Invoice [INV-001] from [Shop Name]"
+- Body: Professional HTML email with invoice summary + PDF attached
+- On success: toast "Invoice emailed to [customer email]"
+- Allow editing the email address before sending
+
+**D. Copy Link**
+- Copy public invoice view URL to clipboard: /invoice/public/[token]
+- Toast: "Link copied to clipboard!"
+- Public page shows invoice in read-only view (no auth required)
+
+**E. Download PDF**
+- Fetch PDF blob and trigger browser download
+- Filename: Invoice-[number]-[ShopName].pdf
+
+#### Share Modal UI:
+- Mobile: Bottom sheet (slides up from bottom of screen)
+- Desktop: Centered modal dialog
+- Each option is a large tappable card with icon + label + subtext
+- WhatsApp button subtext on desktop: "PDF will be downloaded —
+  attach it manually in WhatsApp"
+- Loading spinner while PDF is being fetched
+
+### 8. Invoice Status Management
+- Manual: "Mark as Paid" button on invoice detail page
+- Auto: On page load or via Vercel cron — if due_date < today
+  and status = 'sent', update status to 'overdue'
+- Status flow: draft → sent → paid / overdue
+- Status badges: Gray (Draft), Yellow (Sent/Pending),
+  Green (Paid), Red (Overdue)
+
+### 9. Dashboard
+- Stat cards:
+  - Total Revenue (sum of paid invoices, all time)
+  - This Month Revenue (sum of paid invoices, current month)
+  - Pending Amount (sum of sent invoices not yet paid)
+  - Overdue Count (number of overdue invoices)
+  - Total Customers
+- Monthly revenue bar chart (last 6 months) — Recharts BarChart
+- Recent Invoices table (last 5 invoices)
+- Top 5 customers by total invoiced amount
+- Quick actions: New Invoice | View All Invoices | Add Customer
+
+### 10. Reports (Simple)
+- Date range filter on invoices list
+- Summary row: Total Invoiced | Total Collected | Total Outstanding
+- Export filtered invoice list as CSV (optional for MVP)
+
+---
+
+## USER FLOWS
+
+### New User:
+Sign Up → Onboarding (3 steps) → Dashboard (empty state + prompt
+to create first invoice)
+
+### Create & Share Invoice:
+Dashboard → New Invoice → Select/Add Customer → Add Line Items →
+Preview → Share Modal → WhatsApp (native share sheet, PDF attached)
+
+### Returning User:
+Login → Dashboard → See overdue invoices → Open invoice →
+Mark as Paid or Re-share
+
+---
+
+## API ROUTES
+
+POST   /api/invoices                    → Create invoice
+GET    /api/invoices                    → List invoices (with filters)
+GET    /api/invoices/[id]               → Get single invoice
+PUT    /api/invoices/[id]               → Update invoice
+DELETE /api/invoices/[id]               → Delete invoice
+GET    /api/invoices/pdf/[id]           → Generate + stream PDF
+POST   /api/invoices/[id]/send-email    → Send invoice email via Resend
+GET    /api/customers                   → List customers
+POST   /api/customers                   → Create customer
+PUT    /api/customers/[id]              → Update customer
+DELETE /api/customers/[id]              → Delete customer
+GET    /api/products                    → List saved products/services
+POST   /api/products                    → Create product
+PUT    /api/products/[id]               → Update product
+DELETE /api/products/[id]               → Delete product
+GET    /api/dashboard/stats             → Dashboard metrics
+GET    /invoice/public/[token]          → Public read-only invoice view
+
+---
+
+## FOLDER STRUCTURE
+
+/app
+  /(auth)
+    /login
+    /signup
+  /onboarding
+  /dashboard
+  /invoices
+    /new
+    /[id]
+    /[id]/edit
+  /customers
+    /[id]
+  /products
+  /settings
+  /invoice/public/[token]       ← public invoice view (no auth)
+  /api
+    /invoices/route.ts
+    /invoices/[id]/route.ts
+    /invoices/[id]/send-email/route.ts
+    /invoices/pdf/[id]/route.ts
+    /customers/route.ts
+    /customers/[id]/route.ts
+    /products/route.ts
+    /dashboard/stats/route.ts
+
+/components
+  /ui                           ← shadcn components
+  /invoice
+    InvoiceForm.tsx             ← full invoice creation form
+    InvoicePreview.tsx          ← rendered invoice preview
+    LineItemRow.tsx             ← single line item row
+    ShareModal.tsx              ← share bottom sheet / modal
+    ShareButton.tsx             ← handles Web Share API logic
+    StatusBadge.tsx
+  /dashboard
+    StatsCard.tsx
+    RevenueChart.tsx
+    RecentInvoices.tsx
+    TopCustomers.tsx
+  /customers
+    CustomerCard.tsx
+    CustomerForm.tsx
+  /layout
+    Sidebar.tsx
+    BottomNav.tsx
+    TopBar.tsx
+
+/lib
+  /supabase
+    client.ts                   ← browser client
+    server.ts                   ← server client
+    middleware.ts
+  /pdf
+    InvoiceDocument.tsx         ← @react-pdf/renderer template
+    generatePDF.ts              ← PDF generation helper
+  /share
+    webShare.ts                 ← Web Share API logic + fallback
+  /email
+    sendInvoiceEmail.ts         ← Resend integration
+    invoiceEmailTemplate.tsx    ← HTML email template
+  /utils
+    formatCurrency.ts           ← ₹ formatting
+    formatDate.ts
+    calculateTotals.ts
+    generateInvoiceNumber.ts
+
+/types
+  invoice.ts
+  customer.ts
+  product.ts
+  business.ts
+
+---
+
+## SHARING IMPLEMENTATION DETAIL
+
+### /lib/share/webShare.ts
+
+export async function shareInvoiceAsPDF({
+  invoiceId,
+  invoiceNumber,
+  customerName,
+  total,
+  dueDate,
+  shopName
+}: ShareInvoiceParams) {
+
+  // Step 1: Fetch PDF from generation endpoint
+  const response = await fetch(`/api/invoices/pdf/${invoiceId}`);
+  const blob = await response.blob();
+
+  // Step 2: Create a named File object
+  const file = new File(
+    [blob],
+    `Invoice-${invoiceNumber}.pdf`,
+    { type: "application/pdf" }
+  );
+
+  // Step 3: Pre-filled WhatsApp message
+  const message = `Hi ${customerName}, please find attached Invoice ` +
+    `${invoiceNumber} for ₹${total}.` +
+    `${dueDate ? ` Due date: ${dueDate}.` : ""} — ${shopName}`;
+
+  // Step 4: Check support and trigger native share sheet
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    await navigator.share({
+      title: `Invoice ${invoiceNumber}`,
+      text: message,
+      files: [file],
+    });
+    return { success: true, method: "native" };
+  }
+
+  // Step 5: Fallback — download PDF
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Invoice-${invoiceNumber}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  return { success: true, method: "download" };
+}
+
+---
+
+## PERFORMANCE & SEO
+- Landing page: Static generation (SSG)
+- App pages: Server components where possible, client only where needed
+- Images: next/image with lazy loading, WebP format
+- Fonts: Self-hosted Inter via next/font (no Google Fonts network call)
+- Landing page: Full meta tags, OG image, Twitter card
+
+---
+
+## SECURITY
+- Row Level Security (RLS) enabled on ALL Supabase tables
+  (users can only read/write their own data)
+- All API routes validate user session before any DB operation
+- PDF endpoint validates invoice ownership before streaming
+- Public invoice view uses an opaque random token (not raw invoice ID)
+- Environment variables never exposed to client
+
+---
+
+## ENVIRONMENT VARIABLES
+
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+RESEND_API_KEY=
+NEXT_PUBLIC_APP_URL=
+
+---
+
+## DEPLOYMENT
+- Platform: Vercel (free tier for MVP)
+- Database: Supabase free tier (500MB DB, 1GB storage)
+- Custom domain via Vercel (optional at launch)
+- Vercel cron job for overdue invoice status updates
+
+---
+
+## MVP LAUNCH CHECKLIST
+- [ ] Auth working (email + Google OAuth)
+- [ ] Business profile onboarding (3 steps)
+- [ ] Customer directory (CRUD + search)
+- [ ] Product/service library (CRUD)
+- [ ] Invoice creation with dynamic line items
+- [ ] Auto invoice numbering
+- [ ] PDF generation endpoint working
+- [ ] WhatsApp share via Web Share API (PDF as file, not link)
+- [ ] Email share with PDF attached via Resend
+- [ ] Copy link + public invoice view page
+- [ ] Download PDF
+- [ ] Desktop fallback for WhatsApp share
+- [ ] Invoice status management (draft/sent/paid/overdue)
+- [ ] Dashboard with stats + chart
+- [ ] Mobile responsive (bottom nav, bottom sheet modals)
+- [ ] RLS security enabled on all tables
+- [ ] Deployed to Vercel with environment variables set

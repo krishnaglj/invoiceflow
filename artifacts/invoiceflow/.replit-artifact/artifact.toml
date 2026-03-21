@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "InvoiceFlow"
+version = "1.0.0"
+id = "artifacts/invoiceflow"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21110
+
+[services.development]
+run = "pnpm --filter @workspace/invoiceflow run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/invoiceflow", "run", "build" ]
+publicDir = "artifacts/invoiceflow/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21110"
+BASE_PATH = "/"

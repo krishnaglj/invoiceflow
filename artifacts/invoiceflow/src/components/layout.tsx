@@ -1,0 +1,102 @@
+import { Link, useLocation } from "wouter";
+import { cn } from "@/lib/utils";
+import { LayoutDashboard, Receipt, Users, Package, Settings, LogOut, Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+
+const NAV_ITEMS = [
+  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: Receipt, label: "Invoices", href: "/invoices" },
+  { icon: Users, label: "Customers", href: "/customers" },
+  { icon: Package, label: "Products", href: "/products" },
+  { icon: Settings, label: "Settings", href: "/settings" },
+];
+
+export function AppLayout({ children }: { children: React.ReactNode }) {
+  const [location] = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen flex bg-background">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-64 flex-col border-r bg-card h-screen sticky top-0 no-print">
+        <div className="h-16 flex items-center px-6 border-b border-border/50">
+          <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md shadow-primary/20">
+              <span className="text-white font-display font-bold text-lg leading-none">I</span>
+            </div>
+            <span className="font-display font-bold text-xl tracking-tight text-foreground">InvoiceFlow</span>
+          </Link>
+        </div>
+
+        <div className="flex-1 py-6 px-3 flex flex-col gap-1 overflow-y-auto">
+          {NAV_ITEMS.map((item) => {
+            const isActive = location === item.href || location.startsWith(item.href + "/");
+            return (
+              <Link key={item.href} href={item.href} 
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-all duration-200",
+                  isActive 
+                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/10" 
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground hover-elevate"
+                )}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="p-4 border-t border-border/50">
+          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-destructive" asChild>
+            <Link href="/">
+              <LogOut className="w-5 h-5 mr-3" />
+              Sign Out
+            </Link>
+          </Button>
+        </div>
+      </aside>
+
+      {/* Mobile Nav */}
+      <div className="md:hidden flex flex-col flex-1 w-full min-w-0">
+        <header className="h-16 border-b bg-card flex items-center justify-between px-4 sticky top-0 z-50 no-print">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <span className="text-white font-display font-bold text-lg leading-none">I</span>
+            </div>
+            <span className="font-display font-bold text-xl">InvoiceFlow</span>
+          </Link>
+          <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)}>
+            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </Button>
+        </header>
+
+        {mobileOpen && (
+          <div className="fixed inset-0 top-16 bg-background z-40 p-4 flex flex-col gap-2 no-print">
+            {NAV_ITEMS.map((item) => (
+              <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-4 px-4 py-4 rounded-xl font-medium text-lg",
+                  location.startsWith(item.href) ? "bg-primary text-primary-foreground" : "bg-card text-foreground border"
+                )}
+              >
+                <item.icon className="w-6 h-6" />
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        <main className="flex-1 w-full max-w-full overflow-x-hidden print-container">
+          {children}
+        </main>
+      </div>
+
+      {/* Desktop Main Content */}
+      <main className="hidden md:flex flex-1 flex-col min-w-0 overflow-x-hidden print-container">
+        {children}
+      </main>
+    </div>
+  );
+}

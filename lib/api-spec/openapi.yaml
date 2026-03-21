@@ -1,15 +1,27 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: InvoiceFlow API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: business-profiles
+    description: Business profile management
+  - name: customers
+    description: Customer directory
+  - name: products
+    description: Product/service library
+  - name: invoices
+    description: Invoice management
+  - name: invoice-items
+    description: Invoice line items
+  - name: dashboard
+    description: Dashboard statistics
+
 paths:
   /healthz:
     get:
@@ -24,6 +36,472 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # Business Profile
+  /business-profile:
+    get:
+      operationId: getBusinessProfile
+      tags: [business-profiles]
+      summary: Get business profile
+      responses:
+        "200":
+          description: Business profile found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessProfile"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createBusinessProfile
+      tags: [business-profiles]
+      summary: Create business profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBusinessProfileBody"
+      responses:
+        "201":
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessProfile"
+    patch:
+      operationId: updateBusinessProfile
+      tags: [business-profiles]
+      summary: Update business profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBusinessProfileBody"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessProfile"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Customers
+  /customers:
+    get:
+      operationId: listCustomers
+      tags: [customers]
+      summary: List all customers
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      summary: Create a new customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomerBody"
+      responses:
+        "201":
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/{id}:
+    get:
+      operationId: getCustomer
+      tags: [customers]
+      summary: Get a customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDetail"
+        "404":
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateCustomer
+      tags: [customers]
+      summary: Update a customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCustomerBody"
+      responses:
+        "200":
+          description: Customer updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+        "404":
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteCustomer
+      tags: [customers]
+      summary: Delete a customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Customer deleted
+        "404":
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Products
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List all products/services
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create a new product/service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductBody"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update a product/service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductBody"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete a product/service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Product deleted
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Invoices
+  /invoices:
+    get:
+      operationId: listInvoices
+      tags: [invoices]
+      summary: List all invoices
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, sent, paid, overdue]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+        - name: endDate
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InvoiceListItem"
+    post:
+      operationId: createInvoice
+      tags: [invoices]
+      summary: Create a new invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvoiceBody"
+      responses:
+        "201":
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /invoices/next-number:
+    get:
+      operationId: getNextInvoiceNumber
+      tags: [invoices]
+      summary: Get the next invoice number
+      responses:
+        "200":
+          description: Next invoice number
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NextInvoiceNumber"
+
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [invoices]
+      summary: Get invoice details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Invoice found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "404":
+          description: Invoice not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateInvoice
+      tags: [invoices]
+      summary: Update an invoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInvoiceBody"
+      responses:
+        "200":
+          description: Invoice updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "404":
+          description: Invoice not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteInvoice
+      tags: [invoices]
+      summary: Delete an invoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Invoice deleted
+        "404":
+          description: Invoice not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /invoices/{id}/mark-paid:
+    patch:
+      operationId: markInvoicePaid
+      tags: [invoices]
+      summary: Mark an invoice as paid
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Invoice marked as paid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "404":
+          description: Invoice not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # Dashboard
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/monthly-revenue:
+    get:
+      operationId: getMonthlyRevenue
+      tags: [dashboard]
+      summary: Get monthly revenue for the last 6 months
+      responses:
+        "200":
+          description: Monthly revenue data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MonthlyRevenue"
+
+  /dashboard/top-customers:
+    get:
+      operationId: getTopCustomers
+      tags: [dashboard]
+      summary: Get top customers by revenue
+      responses:
+        "200":
+          description: Top customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopCustomer"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +512,656 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    BusinessProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        shopName:
+          type: string
+        ownerName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        pincode:
+          type: ["string", "null"]
+        gstin:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        bankName:
+          type: ["string", "null"]
+        accountNumber:
+          type: ["string", "null"]
+        ifscCode:
+          type: ["string", "null"]
+        accountHolder:
+          type: ["string", "null"]
+        invoicePrefix:
+          type: string
+        invoiceStartNumber:
+          type: integer
+        defaultTaxPercent:
+          type: number
+        defaultNotes:
+          type: ["string", "null"]
+        defaultPaymentTerms:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - shopName
+        - ownerName
+        - email
+        - phone
+        - invoicePrefix
+        - invoiceStartNumber
+        - defaultTaxPercent
+        - createdAt
+        - updatedAt
+
+    CreateBusinessProfileBody:
+      type: object
+      properties:
+        shopName:
+          type: string
+        ownerName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        pincode:
+          type: string
+        gstin:
+          type: string
+        website:
+          type: string
+        bankName:
+          type: string
+        accountNumber:
+          type: string
+        ifscCode:
+          type: string
+        accountHolder:
+          type: string
+        invoicePrefix:
+          type: string
+        defaultTaxPercent:
+          type: number
+        defaultNotes:
+          type: string
+        defaultPaymentTerms:
+          type: string
+      required:
+        - shopName
+        - ownerName
+        - email
+        - phone
+
+    UpdateBusinessProfileBody:
+      type: object
+      properties:
+        shopName:
+          type: string
+        ownerName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        pincode:
+          type: string
+        gstin:
+          type: string
+        website:
+          type: string
+        logoUrl:
+          type: string
+        bankName:
+          type: string
+        accountNumber:
+          type: string
+        ifscCode:
+          type: string
+        accountHolder:
+          type: string
+        invoicePrefix:
+          type: string
+        defaultTaxPercent:
+          type: number
+        defaultNotes:
+          type: string
+        defaultPaymentTerms:
+          type: string
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        businessName:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        phone:
+          type: string
+        address:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        gstin:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - phone
+        - createdAt
+
+    CustomerDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        businessName:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        phone:
+          type: string
+        address:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        gstin:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        totalInvoices:
+          type: integer
+        totalBilled:
+          type: number
+        totalPaid:
+          type: number
+        outstanding:
+          type: number
+        invoices:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvoiceListItem"
+      required:
+        - id
+        - name
+        - phone
+        - createdAt
+        - totalInvoices
+        - totalBilled
+        - totalPaid
+        - outstanding
+        - invoices
+
+    CreateCustomerBody:
+      type: object
+      properties:
+        name:
+          type: string
+        businessName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        gstin:
+          type: string
+      required:
+        - name
+        - phone
+
+    UpdateCustomerBody:
+      type: object
+      properties:
+        name:
+          type: string
+        businessName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        gstin:
+          type: string
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        defaultRate:
+          type: number
+        unit:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - defaultRate
+        - unit
+        - createdAt
+
+    CreateProductBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        defaultRate:
+          type: number
+        unit:
+          type: string
+      required:
+        - name
+        - defaultRate
+        - unit
+
+    UpdateProductBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        defaultRate:
+          type: number
+        unit:
+          type: string
+
+    InvoiceItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        invoiceId:
+          type: integer
+        productId:
+          type: ["integer", "null"]
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        quantity:
+          type: number
+        unit:
+          type: string
+        rate:
+          type: number
+        amount:
+          type: number
+      required:
+        - id
+        - invoiceId
+        - name
+        - quantity
+        - unit
+        - rate
+        - amount
+
+    CreateInvoiceItemBody:
+      type: object
+      properties:
+        productId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+        rate:
+          type: number
+        amount:
+          type: number
+      required:
+        - name
+        - quantity
+        - unit
+        - rate
+        - amount
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerId:
+          type: ["integer", "null"]
+        customerName:
+          type: ["string", "null"]
+        customerEmail:
+          type: ["string", "null"]
+        customerPhone:
+          type: ["string", "null"]
+        customerAddress:
+          type: ["string", "null"]
+        customerCity:
+          type: ["string", "null"]
+        customerState:
+          type: ["string", "null"]
+        customerGstin:
+          type: ["string", "null"]
+        invoiceNumber:
+          type: string
+        invoiceDate:
+          type: string
+        dueDate:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, sent, paid, overdue]
+        subtotal:
+          type: number
+        discountType:
+          type: string
+          enum: [percent, flat]
+        discountValue:
+          type: number
+        taxPercent:
+          type: number
+        taxAmount:
+          type: number
+        total:
+          type: number
+        notes:
+          type: ["string", "null"]
+        paymentTerms:
+          type: ["string", "null"]
+        showBankDetails:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvoiceItem"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - invoiceNumber
+        - invoiceDate
+        - status
+        - subtotal
+        - discountType
+        - discountValue
+        - taxPercent
+        - taxAmount
+        - total
+        - showBankDetails
+        - items
+        - createdAt
+        - updatedAt
+
+    InvoiceListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerId:
+          type: ["integer", "null"]
+        customerName:
+          type: ["string", "null"]
+        invoiceNumber:
+          type: string
+        invoiceDate:
+          type: string
+        dueDate:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, sent, paid, overdue]
+        total:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - invoiceNumber
+        - invoiceDate
+        - status
+        - total
+        - createdAt
+
+    CreateInvoiceBody:
+      type: object
+      properties:
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        customerAddress:
+          type: string
+        customerCity:
+          type: string
+        customerState:
+          type: string
+        customerGstin:
+          type: string
+        invoiceNumber:
+          type: string
+        invoiceDate:
+          type: string
+        dueDate:
+          type: string
+        status:
+          type: string
+          enum: [draft, sent, paid, overdue]
+        discountType:
+          type: string
+          enum: [percent, flat]
+        discountValue:
+          type: number
+        taxPercent:
+          type: number
+        notes:
+          type: string
+        paymentTerms:
+          type: string
+        showBankDetails:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateInvoiceItemBody"
+      required:
+        - invoiceNumber
+        - invoiceDate
+        - status
+        - items
+
+    UpdateInvoiceBody:
+      type: object
+      properties:
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        customerAddress:
+          type: string
+        customerCity:
+          type: string
+        customerState:
+          type: string
+        customerGstin:
+          type: string
+        invoiceNumber:
+          type: string
+        invoiceDate:
+          type: string
+        dueDate:
+          type: string
+        status:
+          type: string
+          enum: [draft, sent, paid, overdue]
+        discountType:
+          type: string
+          enum: [percent, flat]
+        discountValue:
+          type: number
+        taxPercent:
+          type: number
+        notes:
+          type: string
+        paymentTerms:
+          type: string
+        showBankDetails:
+          type: boolean
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateInvoiceItemBody"
+
+    NextInvoiceNumber:
+      type: object
+      properties:
+        invoiceNumber:
+          type: string
+        prefix:
+          type: string
+        number:
+          type: integer
+      required:
+        - invoiceNumber
+        - prefix
+        - number
+
+    DashboardStats:
+      type: object
+      properties:
+        totalRevenue:
+          type: number
+        paidInvoices:
+          type: integer
+        pendingAmount:
+          type: number
+        overdueCount:
+          type: integer
+        totalInvoices:
+          type: integer
+        totalCustomers:
+          type: integer
+      required:
+        - totalRevenue
+        - paidInvoices
+        - pendingAmount
+        - overdueCount
+        - totalInvoices
+        - totalCustomers
+
+    MonthlyRevenue:
+      type: object
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+        invoiceCount:
+          type: integer
+      required:
+        - month
+        - revenue
+        - invoiceCount
+
+    TopCustomer:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        totalBilled:
+          type: number
+        invoiceCount:
+          type: integer
+      required:
+        - id
+        - name
+        - totalBilled
+        - invoiceCount

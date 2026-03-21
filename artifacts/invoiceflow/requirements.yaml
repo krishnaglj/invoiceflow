@@ -1,0 +1,23 @@
+packages:
+  "framer-motion": "For smooth page transitions and beautiful staggered animations"
+  "recharts": "For the dashboard revenue bar charts"
+  "react-hook-form": "For complex forms like the invoice builder"
+  "@hookform/resolvers": "For Zod schema validation integration"
+  "zod": "For strict runtime validation of forms"
+  "date-fns": "For readable date formatting"
+  "clsx": "For conditional class merging"
+  "tailwind-merge": "For merging Tailwind utility classes safely"
+  "lucide-react": "For beautiful consistent icons"
+
+images:
+  - path: "artifacts/invoiceflow/public/images/hero-illustration.png"
+    description: "Modern abstract 3D illustration of a clean dashboard interface floating with a paper airplane and gold coins. High-end SaaS aesthetic, minimal, predominantly white and deep indigo blue."
+    aspect_ratio: "16:9"
+  - path: "artifacts/invoiceflow/public/images/logo.png"
+    description: "Minimal geometric logo for an app called InvoiceFlow. Two overlapping rounded squares forming an 'F', in deep blue and vibrant blue. Transparent background."
+    aspect_ratio: "1:1"
+
+notes:
+  - Using generated Orval hooks from @workspace/api-client-react
+  - Implementing pseudo-authentication via business-profile existence check
+  - Print styling uses CSS @media print rather than heavy PDF libraries
