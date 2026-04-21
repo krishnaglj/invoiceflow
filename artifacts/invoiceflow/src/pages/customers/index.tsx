@@ -5,7 +5,8 @@ import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Search, Mail, Phone, Building2 } from "lucide-react";
+import { Plus, Search, Mail, Phone, Building2, Pencil } from "lucide-react";
+import { EditCustomerDialog } from "@/components/edit-customer-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +26,7 @@ export default function Customers() {
   const [search, setSearch] = useState("");
   const { data: customers, isLoading } = useListCustomers({ search: search || undefined });
   const [isOpen, setIsOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<{ id: number; name: string; phone: string; email?: string | null; businessName?: string | null; address?: string | null; city?: string | null; state?: string | null; gstin?: string | null } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createMut = useCreateCustomer();
@@ -95,28 +97,45 @@ export default function Customers() {
         />
       </div>
 
+      {editingCustomer && (
+        <EditCustomerDialog
+          customer={editingCustomer}
+          open={!!editingCustomer}
+          onOpenChange={(open) => { if (!open) setEditingCustomer(null); }}
+        />
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {customers?.map((c) => (
-          <Link key={c.id} href={`/customers/${c.id}`}>
-            <Card className="rounded-2xl hover:border-primary/50 transition-colors cursor-pointer hover-elevate overflow-hidden border-border/50 group">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-primary font-bold text-lg group-hover:scale-110 transition-transform">
-                    {c.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-lg truncate">{c.name}</h3>
+          <Card key={c.id} className="rounded-2xl hover:border-primary/50 transition-colors border-border/50 group overflow-hidden hover-elevate">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <Link href={`/customers/${c.id}`} className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-primary font-bold text-lg group-hover:scale-110 transition-transform shrink-0">
+                  {c.name.charAt(0)}
+                </Link>
+                <div className="flex-1 min-w-0">
+                  <Link href={`/customers/${c.id}`} className="block">
+                    <h3 className="font-bold text-lg truncate hover:text-primary transition-colors">{c.name}</h3>
                     {c.businessName && <p className="text-sm text-muted-foreground truncate flex items-center gap-1 mt-0.5"><Building2 className="w-3 h-3" /> {c.businessName}</p>}
-                  </div>
+                  </Link>
                 </div>
-                
-                <div className="mt-6 space-y-2 text-sm text-muted-foreground">
-                  <p className="flex items-center gap-2"><Phone className="w-4 h-4" /> {c.phone}</p>
-                  {c.email && <p className="flex items-center gap-2 truncate"><Mail className="w-4 h-4 shrink-0" /> {c.email}</p>}
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 h-8 w-8 rounded-lg text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => { e.preventDefault(); setEditingCustomer(c); }}
+                  title="Edit customer"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+
+              <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                <p className="flex items-center gap-2"><Phone className="w-4 h-4" /> {c.phone}</p>
+                {c.email && <p className="flex items-center gap-2 truncate"><Mail className="w-4 h-4 shrink-0" /> {c.email}</p>}
+              </div>
+            </CardContent>
+          </Card>
         ))}
         {customers?.length === 0 && (
           <div className="col-span-full py-12 text-center text-muted-foreground border border-dashed rounded-2xl">

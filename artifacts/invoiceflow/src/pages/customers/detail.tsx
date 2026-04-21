@@ -1,28 +1,39 @@
+import { useState } from "react";
 import { useParams } from "wouter";
 import { useGetCustomer } from "@workspace/api-client-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
-import { Phone, Mail, Building, MapPin, ReceiptText, ArrowUpRight, Clock } from "lucide-react";
+import { EditCustomerDialog } from "@/components/edit-customer-dialog";
+import { Phone, Mail, Building, MapPin, ReceiptText, ArrowUpRight, Clock, Pencil } from "lucide-react";
 import { Link } from "wouter";
 
 export default function CustomerDetail() {
   const { id } = useParams();
   const { data: customer, isLoading } = useGetCustomer(parseInt(id || "0", 10), { query: { enabled: !!id } });
+  const [editOpen, setEditOpen] = useState(false);
 
   if (isLoading || !customer) return <div className="p-8">Loading...</div>;
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
-      <div className="flex items-center gap-4 mb-2">
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold text-3xl font-display">
-          {customer.name.charAt(0)}
+      <div className="flex items-start justify-between gap-4 mb-2">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold text-3xl font-display">
+            {customer.name.charAt(0)}
+          </div>
+          <div>
+            <h1 className="text-3xl font-display font-bold">{customer.name}</h1>
+            {customer.businessName && <p className="text-muted-foreground flex items-center gap-1"><Building className="w-4 h-4" /> {customer.businessName}</p>}
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-display font-bold">{customer.name}</h1>
-          {customer.businessName && <p className="text-muted-foreground flex items-center gap-1"><Building className="w-4 h-4" /> {customer.businessName}</p>}
-        </div>
+        <Button variant="outline" className="rounded-xl shrink-0" onClick={() => setEditOpen(true)}>
+          <Pencil className="w-4 h-4 mr-2" /> Edit
+        </Button>
       </div>
+
+      <EditCustomerDialog customer={customer} open={editOpen} onOpenChange={setEditOpen} />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="rounded-2xl border-border/50 shadow-sm">
