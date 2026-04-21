@@ -1,0 +1,49 @@
+#21 1.668       at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+#21 1.668       at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+#21 1.668       at Module.require (node:internal/modules/cjs/loader:1463:12)
+#21 1.668       at require (node:internal/modules/helpers:147:16)
+#21 1.668       at requireWithFriendlyError (/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js:97:10)
+#21 1.668       at Object.<anonymous> (/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js:124:76) {
+#21 1.668     code: 'MODULE_NOT_FOUND',
+#21 1.668     requireStack: [
+#21 1.668       '/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js'
+#21 1.668     ]
+#21 1.668   }
+#21 1.668 }
+#21 1.670 
+#21 1.670 Node.js v22.22.2
+#21 1.742 /app/artifacts/invoiceflow:
+#21 1.742  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/invoiceflow@0.0.0 build: `vite build --config vite.config.ts`
+#21 1.742 Exit status 1
+#21 ERROR: process "/bin/sh -c PORT=3000 BASE_PATH=/ NODE_ENV=production     pnpm --filter @workspace/invoiceflow run build" did not complete successfully: exit code: 1
+
+#20 [api-builder 2/2] RUN pnpm --filter @workspace/api-server run build
+#20 CANCELED
+------
+ > [frontend-builder 2/2] RUN PORT=3000 BASE_PATH=/ NODE_ENV=production     pnpm --filter @workspace/invoiceflow run build:
+1.668     requireStack: [
+1.668       '/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js'
+1.668     ]
+1.668   }
+1.668 }
+1.670 
+1.670 Node.js v22.22.2
+1.742 /app/artifacts/invoiceflow:
+1.742  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/invoiceflow@0.0.0 build: `vite build --config vite.config.ts`
+1.742 Exit status 1
+------
+Dockerfile:27
+
+--------------------
+
+  26 |     # PORT is required by vite.config.ts validation (only affects dev server, not build output)
+
+  27 | >>> RUN PORT=3000 BASE_PATH=/ NODE_ENV=production \
+
+  28 | >>>     pnpm --filter @workspace/invoiceflow run build
+
+  29 |     
+
+--------------------
+
+failed to solve: process "/bin/sh -c PORT=3000 BASE_PATH=/ NODE_ENV=production     pnpm --filter @workspace/invoiceflow run build" did not complete successfully: exit code: 1
