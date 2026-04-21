@@ -56,27 +56,27 @@ export default function InvoiceDetail() {
   return (
     <div className="bg-muted/20 min-h-screen pb-20 print:min-h-0 print:pb-0 print:bg-white">
       {/* Top Action Bar (No Print) */}
-      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b px-4 py-3 flex items-center justify-between no-print shadow-sm">
-        <Button variant="ghost" className="rounded-xl" onClick={() => window.history.back()}>
-          <ChevronLeft className="w-5 h-5 mr-1" /> Back
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b px-3 sm:px-4 py-3 flex items-center justify-between no-print shadow-sm gap-2">
+        <Button variant="ghost" className="rounded-xl shrink-0" onClick={() => window.history.back()}>
+          <ChevronLeft className="w-5 h-5 sm:mr-1" /><span className="hidden sm:inline">Back</span>
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {invoice.status !== 'paid' && (
-            <Button variant="outline" className="rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50" onClick={handleMarkPaid} disabled={markPaidMut.isPending}>
-              <CheckCircle className="w-4 h-4 mr-2" /> Mark Paid
+            <Button variant="outline" size="icon" className="rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 sm:w-auto sm:px-3 sm:gap-2" onClick={handleMarkPaid} disabled={markPaidMut.isPending} title="Mark Paid">
+              <CheckCircle className="w-4 h-4 shrink-0" /><span className="hidden sm:inline">Mark Paid</span>
             </Button>
           )}
-          <Button variant="outline" className="rounded-xl" onClick={() => setLocation(`/invoices/${invoiceId}/edit`)}>
-            <Edit className="w-4 h-4 mr-2" /> Edit
+          <Button variant="outline" size="icon" className="rounded-xl sm:w-auto sm:px-3 sm:gap-2" onClick={() => setLocation(`/invoices/${invoiceId}/edit`)} title="Edit">
+            <Edit className="w-4 h-4 shrink-0" /><span className="hidden sm:inline">Edit</span>
           </Button>
-          <Button variant="outline" className="rounded-xl" onClick={handlePrint}>
-            <Printer className="w-4 h-4 mr-2" /> Print PDF
+          <Button variant="outline" size="icon" className="rounded-xl sm:w-auto sm:px-3 sm:gap-2" onClick={handlePrint} title="Print PDF">
+            <Printer className="w-4 h-4 shrink-0" /><span className="hidden sm:inline">Print PDF</span>
           </Button>
-          
+
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="rounded-xl shadow-lg shadow-primary/20">
-                <Share2 className="w-4 h-4 mr-2" /> Share
+              <Button size="icon" className="rounded-xl shadow-lg shadow-primary/20 sm:w-auto sm:px-3 sm:gap-2" title="Share">
+                <Share2 className="w-4 h-4 shrink-0" /><span className="hidden sm:inline">Share</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md rounded-2xl">
