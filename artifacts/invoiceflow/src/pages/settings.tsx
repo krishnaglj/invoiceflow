@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
-import { Save } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Save, Upload, X, ImagePlus } from "lucide-react";
 
 const schema = z.object({
   shopName: z.string().min(2),
@@ -23,6 +23,7 @@ const schema = z.object({
   state: z.string().optional(),
   pincode: z.string().optional(),
   gstin: z.string().optional(),
+  logoUrl: z.string().optional(),
   bankName: z.string().optional(),
   accountNumber: z.string().optional(),
   ifscCode: z.string().optional(),
@@ -37,6 +38,7 @@ export default function Settings() {
   const { data: profile, isLoading } = useGetBusinessProfile();
   const updateMut = useUpdateBusinessProfile();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema)
@@ -51,6 +53,7 @@ export default function Settings() {
         state: profile.state || "",
         pincode: profile.pincode || "",
         gstin: profile.gstin || "",
+        logoUrl: profile.logoUrl || "",
         bankName: profile.bankName || "",
         accountNumber: profile.accountNumber || "",
         ifscCode: profile.ifscCode || "",
@@ -60,6 +63,18 @@ export default function Settings() {
       });
     }
   }, [profile, form]);
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) {
+      toast({ title: "Image too large", description: "Please use an image under 500 KB.", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => form.setValue("logoUrl", reader.result as string, { shouldDirty: true });
+    reader.readAsDataURL(file);
+  };
 
   const onSubmit = (data: z.infer<typeof schema>) => {
     updateMut.mutate({ data }, {
@@ -92,6 +107,58 @@ export default function Settings() {
                 <CardDescription>Details that appear on your invoices.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+
+                {/* Logo Upload */}
+                <div className="space-y-3">
+                  <Label>Business Logo <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <div className="flex items-center gap-5">
+                    {/* Preview */}
+                    <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-border flex items-center justify-center bg-muted/30 overflow-hidden shrink-0">
+                      {form.watch("logoUrl") ? (
+                        <img src={form.watch("logoUrl")} alt="Logo" className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                          <ImagePlus className="w-6 h-6" />
+                          <span className="text-[10px] text-center leading-tight">No logo</span>
+                        </div>
+                      )}
+                    </div>
+                    {/* Actions */}
+                    <div className="flex flex-col gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                        className="hidden"
+                        onChange={handleLogoChange}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl h-9 gap-2"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="w-4 h-4" />
+                        {form.watch("logoUrl") ? "Change Logo" : "Upload Logo"}
+                      </Button>
+                      {form.watch("logoUrl") && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="rounded-xl h-9 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => form.setValue("logoUrl", "", { shouldDirty: true })}
+                        >
+                          <X className="w-4 h-4" /> Remove
+                        </Button>
+                      )}
+                      <p className="text-xs text-muted-foreground">PNG, JPG, SVG · Max 500 KB</p>
+                    </div>
+                  </div>
+                </div>
+
+                <hr className="border-border/50" />
                 <div className="grid sm:grid-cols-2 gap-5">
                   <div className="space-y-2"><Label>Business Name</Label><Input {...form.register("shopName")} /></div>
                   <div className="space-y-2"><Label>Owner Name</Label><Input {...form.register("ownerName")} /></div>
