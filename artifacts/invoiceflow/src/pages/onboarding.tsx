@@ -76,7 +76,14 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen bg-muted/20 flex flex-col items-center py-12 px-4">
       <div className="w-full max-w-3xl mb-8 flex flex-col items-center">
-        <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Logo" className="w-12 h-12 mb-6" />
+        <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mb-6 shadow-lg shadow-primary/25">
+          <svg viewBox="0 0 24 24" className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 3h12" />
+            <path d="M6 8h12" />
+            <path d="M6 13l8.5 8" />
+            <path d="M6 13h3a4 4 0 0 0 0-5H6" />
+          </svg>
+        </div>
         <h1 className="text-3xl font-display font-bold text-center">Set up your business</h1>
         <p className="text-muted-foreground mt-2 text-center">Let's configure your profile to generate your first invoice.</p>
         
