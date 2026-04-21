@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useCreateBusinessProfile } from "@workspace/api-client-react";
-import { INDIAN_STATES } from "@/lib/utils";
+import { INDIAN_STATES, generateInvoicePrefix } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +41,13 @@ export default function Onboarding() {
     resolver: zodResolver(formSchema),
     defaultValues: { invoicePrefix: "INV-", defaultTaxPercent: 0 }
   });
+
+  const shopName = form.watch("shopName");
+  useEffect(() => {
+    if (shopName && shopName.length >= 2) {
+      form.setValue("invoicePrefix", generateInvoicePrefix(shopName), { shouldDirty: false });
+    }
+  }, [shopName, form]);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     if (step < 3) {
@@ -174,8 +181,11 @@ export default function Onboarding() {
               <hr className="my-4" />
               <div className="grid sm:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <Label>Invoice Prefix</Label>
-                  <Input {...form.register("invoicePrefix")} placeholder="INV-" className="h-12 font-mono" />
+                  <Label>Invoice Prefix <span className="text-muted-foreground font-normal text-xs">(auto-generated)</span></Label>
+                  <Input {...form.register("invoicePrefix")} className="h-12 font-mono" />
+                  <p className="text-xs text-muted-foreground">
+                    Your invoices will look like: <span className="font-mono font-semibold text-foreground">{form.watch("invoicePrefix") || "INV-"}001</span>
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label>Default Tax %</Label>

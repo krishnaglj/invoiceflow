@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useGetBusinessProfile, useUpdateBusinessProfile } from "@workspace/api-client-react";
-import { INDIAN_STATES } from "@/lib/utils";
+import { INDIAN_STATES, generateInvoicePrefix } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useRef } from "react";
-import { Save, Upload, X, ImagePlus } from "lucide-react";
+import { Save, Upload, X, ImagePlus, RefreshCw } from "lucide-react";
 
 const schema = z.object({
   shopName: z.string().min(2),
@@ -206,7 +206,29 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid sm:grid-cols-2 gap-5">
-                  <div className="space-y-2"><Label>Invoice Number Prefix</Label><Input {...form.register("invoicePrefix")} className="font-mono"/></div>
+                  <div className="space-y-2">
+                    <Label>Invoice Number Prefix</Label>
+                    <div className="flex gap-2">
+                      <Input {...form.register("invoicePrefix")} className="font-mono" />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="shrink-0 rounded-xl"
+                        title="Regenerate from business name"
+                        onClick={() => {
+                          const name = form.getValues("shopName");
+                          if (name) form.setValue("invoicePrefix", generateInvoicePrefix(name), { shouldDirty: true });
+                        }}
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Preview: <span className="font-mono font-semibold text-foreground">{form.watch("invoicePrefix") || "INV-"}001</span>
+                      <span className="ml-2 text-[10px] text-muted-foreground/70">· Includes financial year for easy tracking</span>
+                    </p>
+                  </div>
                   <div className="space-y-2"><Label>Default Tax %</Label><Input type="number" step="0.1" {...form.register("defaultTaxPercent")} /></div>
                 </div>
                 <div className="space-y-2"><Label>Default Notes</Label><Input {...form.register("defaultNotes")} /></div>
