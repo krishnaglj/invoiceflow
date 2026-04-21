@@ -94,11 +94,13 @@ export default function Settings() {
 
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="h-12 bg-card border rounded-xl mb-6 p-1">
-            <TabsTrigger value="general" className="h-10 rounded-lg px-6 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Business Profile</TabsTrigger>
-            <TabsTrigger value="bank" className="h-10 rounded-lg px-6 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Bank Details</TabsTrigger>
-            <TabsTrigger value="invoice" className="h-10 rounded-lg px-6 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Invoice Defaults</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 mb-6">
+            <TabsList className="h-12 bg-card border rounded-xl p-1 w-max min-w-full">
+              <TabsTrigger value="general" className="h-10 rounded-lg px-4 md:px-6 text-sm data-[state=active]:bg-primary/10 data-[state=active]:text-primary whitespace-nowrap">Business Profile</TabsTrigger>
+              <TabsTrigger value="bank" className="h-10 rounded-lg px-4 md:px-6 text-sm data-[state=active]:bg-primary/10 data-[state=active]:text-primary whitespace-nowrap">Bank Details</TabsTrigger>
+              <TabsTrigger value="invoice" className="h-10 rounded-lg px-4 md:px-6 text-sm data-[state=active]:bg-primary/10 data-[state=active]:text-primary whitespace-nowrap">Invoice Defaults</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="general">
             <Card className="rounded-2xl border-border/50 shadow-sm">

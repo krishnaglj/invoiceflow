@@ -152,7 +152,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        <main className="flex-1 w-full max-w-full overflow-x-hidden print-container">
+        <main className="flex-1 w-full max-w-full overflow-x-hidden overflow-y-auto print-container">
           {children}
         </main>
       </div>
