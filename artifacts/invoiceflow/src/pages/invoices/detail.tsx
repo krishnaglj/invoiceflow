@@ -54,7 +54,7 @@ export default function InvoiceDetail() {
   if (isLoading || !invoice || !profile) return <div className="p-8">Loading...</div>;
 
   return (
-    <div className="bg-muted/20 min-h-screen pb-20">
+    <div className="bg-muted/20 min-h-screen pb-20 print:min-h-0 print:pb-0 print:bg-white">
       {/* Top Action Bar (No Print) */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b px-4 py-3 flex items-center justify-between no-print shadow-sm">
         <Button variant="ghost" className="rounded-xl" onClick={() => window.history.back()}>
@@ -104,10 +104,10 @@ export default function InvoiceDetail() {
       </div>
 
       {/* The Printable Invoice Sheet */}
-      <div className="max-w-[21cm] mx-auto mt-8 bg-white shadow-2xl sm:rounded-none md:rounded-sm border print-container">
-        <div className="p-10 md:p-14 text-black">
+      <div className="max-w-[21cm] mx-auto mt-8 print:mt-0 bg-white shadow-2xl sm:rounded-none md:rounded-sm border print-container">
+        <div className="p-6 sm:p-10 md:p-14 print:p-10 text-black">
           {/* Header */}
-          <div className="flex justify-between items-start border-b pb-8 mb-8">
+          <div className="flex flex-col gap-6 sm:flex-row sm:justify-between sm:items-start border-b pb-6 mb-6 sm:pb-8 sm:mb-8">
             <div className="max-w-xs">
               {profile.logoUrl ? (
                 <img src={profile.logoUrl} alt="Logo" className="max-h-16 object-contain mb-4" />
@@ -122,7 +122,7 @@ export default function InvoiceDetail() {
               <p className="text-sm text-slate-600">Email: {profile.email}</p>
               {profile.gstin && <p className="text-sm text-slate-600 mt-1 font-medium">GSTIN: {profile.gstin}</p>}
             </div>
-            <div className="text-right">
+            <div className="sm:text-right">
               <h2 className="text-4xl font-black text-slate-200 uppercase tracking-widest mb-4">Invoice</h2>
               <div className="inline-block text-left bg-slate-50 p-4 rounded-lg">
                 <p className="text-sm text-slate-500 font-medium">Invoice No.</p>
@@ -177,7 +177,7 @@ export default function InvoiceDetail() {
           </table>
 
           {/* Totals */}
-          <div className="flex justify-end mb-12">
+          <div className="flex justify-end mb-8 print:mb-6">
             <div className="w-72 space-y-3 text-sm">
               <div className="flex justify-between text-slate-600">
                 <span>Subtotal</span>
@@ -224,10 +224,11 @@ export default function InvoiceDetail() {
                 <div className="bg-slate-50 p-4 rounded-lg self-start">
                   <h4 className="font-bold text-slate-900 mb-3 uppercase tracking-wider text-xs">Bank Details for Payment</h4>
                   <div className="space-y-1">
-                    <p><span className="text-slate-500 w-24 inline-block">Bank:</span> <span className="font-medium text-slate-900">{profile.bankName}</span></p>
-                    <p><span className="text-slate-500 w-24 inline-block">Account:</span> <span className="font-medium text-slate-900">{profile.accountNumber}</span></p>
-                    <p><span className="text-slate-500 w-24 inline-block">IFSC:</span> <span className="font-medium text-slate-900">{profile.ifscCode}</span></p>
-                    <p><span className="text-slate-500 w-24 inline-block">Name:</span> <span className="font-medium text-slate-900">{profile.accountHolder}</span></p>
+                    {profile.bankName && <p><span className="text-slate-500 w-24 inline-block">Bank:</span> <span className="font-medium text-slate-900">{profile.bankName}</span></p>}
+                    {profile.accountNumber && <p><span className="text-slate-500 w-24 inline-block">Account:</span> <span className="font-medium text-slate-900">{profile.accountNumber}</span></p>}
+                    {profile.ifscCode && <p><span className="text-slate-500 w-24 inline-block">IFSC:</span> <span className="font-medium text-slate-900">{profile.ifscCode}</span></p>}
+                    {profile.accountHolder && <p><span className="text-slate-500 w-24 inline-block">Name:</span> <span className="font-medium text-slate-900">{profile.accountHolder}</span></p>}
+                    {profile.upiId && <p><span className="text-slate-500 w-24 inline-block">UPI:</span> <span className="font-medium text-slate-900">{profile.upiId}</span></p>}
                   </div>
                 </div>
               )}

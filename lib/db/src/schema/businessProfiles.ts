@@ -20,6 +20,7 @@ export const businessProfilesTable = pgTable("business_profiles", {
   accountNumber: text("account_number"),
   ifscCode: text("ifsc_code"),
   accountHolder: text("account_holder"),
+  upiId: text("upi_id"),
   invoicePrefix: text("invoice_prefix").notNull().default("INV"),
   invoiceStartNumber: integer("invoice_start_number").notNull().default(1),
   defaultTaxPercent: real("default_tax_percent").notNull().default(0),

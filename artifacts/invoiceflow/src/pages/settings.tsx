@@ -28,6 +28,7 @@ const schema = z.object({
   accountNumber: z.string().optional(),
   ifscCode: z.string().optional(),
   accountHolder: z.string().optional(),
+  upiId: z.string().optional(),
   invoicePrefix: z.string(),
   defaultTaxPercent: z.coerce.number(),
   defaultNotes: z.string().optional(),
@@ -58,6 +59,7 @@ export default function Settings() {
         accountNumber: profile.accountNumber || "",
         ifscCode: profile.ifscCode || "",
         accountHolder: profile.accountHolder || "",
+        upiId: profile.upiId || "",
         defaultNotes: profile.defaultNotes || "",
         defaultPaymentTerms: profile.defaultPaymentTerms || "",
       });
@@ -211,6 +213,11 @@ export default function Settings() {
                 <div className="space-y-2"><Label>Account Holder</Label><Input {...form.register("accountHolder")} /></div>
                 <div className="space-y-2"><Label>Account Number</Label><Input {...form.register("accountNumber")} className="font-mono"/></div>
                 <div className="space-y-2"><Label>IFSC Code</Label><Input {...form.register("ifscCode")} className="font-mono uppercase"/></div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>UPI ID</Label>
+                  <Input {...form.register("upiId")} placeholder="yourname@upi" className="font-mono" />
+                  <p className="text-xs text-muted-foreground">Shown on invoice for UPI/QR payments</p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
