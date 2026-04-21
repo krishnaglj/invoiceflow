@@ -62,7 +62,8 @@ async function buildAll() {
       "@swc/*",
       "@aws-sdk/*",
       "@azure/*",
-      "@opentelemetry/*",
+      // @opentelemetry/* is intentionally NOT external — esbuild bundles it so
+      // the production Docker image doesn't need a separate node_modules copy.
       "@google-cloud/*",
       "@google/*",
       "googleapis",

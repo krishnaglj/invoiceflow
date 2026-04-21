@@ -50,11 +50,8 @@ FROM node:22-slim AS runner
 
 WORKDIR /app
 
-# Copy bundled API (esbuild output — nearly everything is inlined)
+# Copy bundled API (esbuild bundles everything including @opentelemetry)
 COPY --from=api-builder  /app/artifacts/api-server/dist ./dist
-
-# Copy external packages that esbuild did NOT bundle (see build.mjs externals)
-COPY --from=api-builder  /app/node_modules/@opentelemetry ./node_modules/@opentelemetry
 
 # Copy frontend static files so Express can serve them at dist/public/
 COPY --from=frontend-builder /app/artifacts/invoiceflow/dist/public ./dist/public
