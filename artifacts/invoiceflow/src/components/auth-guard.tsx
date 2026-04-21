@@ -1,29 +1,23 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@workspace/replit-auth-web";
+import { useAuth } from "@clerk/react";
 import { useGetBusinessProfile } from "@workspace/api-client-react";
 import { Loader2 } from "lucide-react";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [, setLocation] = useLocation();
-  const { isLoading: authLoading, isAuthenticated, login } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
   const { data: profile, isLoading: profileLoading, isError } = useGetBusinessProfile({
-    query: { enabled: isAuthenticated, retry: false }
+    query: { enabled: isSignedIn, retry: false }
   });
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      login();
-    }
-  }, [authLoading, isAuthenticated, login]);
-
-  useEffect(() => {
-    if (!authLoading && isAuthenticated && !profileLoading && isError) {
+    if (isLoaded && isSignedIn && !profileLoading && isError) {
       setLocation("/onboarding");
     }
-  }, [authLoading, isAuthenticated, profileLoading, isError, setLocation]);
+  }, [isLoaded, isSignedIn, profileLoading, isError, setLocation]);
 
-  if (authLoading || (isAuthenticated && profileLoading)) {
+  if (!isLoaded || (isSignedIn && profileLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -36,7 +30,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated || isError || !profile) {
+  if (!isSignedIn || isError || !profile) {
     return null;
   }
 

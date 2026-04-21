@@ -1,13 +1,11 @@
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight, CheckCircle2, Zap, FileText, BarChart3, Shield,
-  Loader2, Users, IndianRupee, TrendingUp, Share2, ChevronRight,
+  Users, IndianRupee, TrendingUp, Share2, ChevronRight,
   Star, MessageSquare, ClipboardList, Send
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useAuth } from "@workspace/replit-auth-web";
-import { useLocation } from "wouter";
-import { useEffect } from "react";
+import { SignInButton, SignUpButton } from "@clerk/react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -15,23 +13,6 @@ const fadeUp = {
 };
 
 export default function Landing() {
-  const { isAuthenticated, isLoading, login } = useAuth();
-  const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      setLocation("/dashboard");
-    }
-  }, [isAuthenticated, isLoading, setLocation]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background font-sans selection:bg-primary/20 selection:text-primary overflow-x-hidden">
 
@@ -44,10 +25,14 @@ export default function Landing() {
           <span className="font-display font-bold text-2xl tracking-tight text-foreground">InvoiceFlow</span>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="ghost" className="hidden sm:flex rounded-full" onClick={login}>Sign In</Button>
-          <Button className="rounded-full shadow-lg shadow-primary/20 px-6" onClick={login}>
-            Get Started Free
-          </Button>
+          <SignInButton mode="modal">
+            <Button variant="ghost" className="hidden sm:flex rounded-full">Sign In</Button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <Button className="rounded-full shadow-lg shadow-primary/20 px-6">
+              Get Started Free
+            </Button>
+          </SignUpButton>
         </div>
       </nav>
 
@@ -73,12 +58,16 @@ export default function Landing() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="rounded-full h-14 px-8 text-lg shadow-xl shadow-primary/25" onClick={login}>
-                Get Started Free <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button size="lg" variant="outline" className="rounded-full h-14 px-8 text-lg" onClick={login}>
-                Sign In <ChevronRight className="ml-1 w-5 h-5" />
-              </Button>
+              <SignUpButton mode="modal">
+                <Button size="lg" className="rounded-full h-14 px-8 text-lg shadow-xl shadow-primary/25">
+                  Get Started Free <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </SignUpButton>
+              <SignInButton mode="modal">
+                <Button size="lg" variant="outline" className="rounded-full h-14 px-8 text-lg">
+                  Sign In <ChevronRight className="ml-1 w-5 h-5" />
+                </Button>
+              </SignInButton>
             </div>
 
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-muted-foreground">
@@ -97,7 +86,6 @@ export default function Landing() {
           >
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-violet-400/20 rounded-[3rem] blur-3xl -z-10 rotate-3" />
             <div className="rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 p-6 shadow-2xl border border-white/10">
-              {/* Fake invoice card */}
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Invoice</div>
@@ -108,9 +96,9 @@ export default function Landing() {
               </div>
               <div className="space-y-2 mb-6">
                 {[
-                  { name: "Web Design Services", qty: 1, rate: "₹25,000", total: "₹25,000" },
-                  { name: "Monthly SEO Package", qty: 3, rate: "₹5,000", total: "₹15,000" },
-                  { name: "Logo Redesign", qty: 1, rate: "₹8,000", total: "₹8,000" },
+                  { name: "Web Design Services", total: "₹25,000" },
+                  { name: "Monthly SEO Package", total: "₹15,000" },
+                  { name: "Logo Redesign", total: "₹8,000" },
                 ].map((item, i) => (
                   <div key={i} className="flex justify-between text-sm py-2 border-b border-white/5">
                     <span className="text-slate-300">{item.name}</span>
@@ -203,7 +191,7 @@ export default function Landing() {
             {
               icon: Shield, color: "bg-teal-500/10 text-teal-500",
               title: "Private & Secure",
-              desc: "Each shopkeeper's data is completely isolated. Sign in with Google — your data is always yours.",
+              desc: "Each shopkeeper's data is completely isolated. Sign in with Google, Apple, email, or phone.",
             },
           ].map((f, i) => (
             <motion.div
@@ -238,7 +226,7 @@ export default function Landing() {
               {
                 step: "01", icon: Zap,
                 title: "Sign in with Google",
-                desc: "One click to create your free account. No forms, no passwords.",
+                desc: "One click to create your free account. Also supports Apple, email, phone and WhatsApp.",
               },
               {
                 step: "02", icon: ClipboardList,
@@ -341,15 +329,16 @@ export default function Landing() {
           <p className="text-xl text-white/70 mb-10">
             Join thousands of Indian shopkeepers who save hours every week with InvoiceFlow.
           </p>
-          <Button
-            size="lg"
-            variant="secondary"
-            className="rounded-full h-14 px-10 text-lg font-semibold shadow-2xl hover:-translate-y-0.5 transition-transform"
-            onClick={login}
-          >
-            Get Started — It's Free <ArrowRight className="ml-2 w-5 h-5" />
-          </Button>
-          <p className="text-white/50 text-sm mt-6">No credit card required · Sign in with Google</p>
+          <SignUpButton mode="modal">
+            <Button
+              size="lg"
+              variant="secondary"
+              className="rounded-full h-14 px-10 text-lg font-semibold shadow-2xl hover:-translate-y-0.5 transition-transform"
+            >
+              Get Started — It's Free <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </SignUpButton>
+          <p className="text-white/50 text-sm mt-6">No credit card required · Google · Apple · Email · Phone</p>
         </motion.div>
       </section>
 
@@ -367,7 +356,9 @@ export default function Landing() {
           </p>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MessageSquare className="w-4 h-4" />
-            <button className="hover:text-foreground transition-colors" onClick={login}>Get Support</button>
+            <SignInButton mode="modal">
+              <button className="hover:text-foreground transition-colors">Get Support</button>
+            </SignInButton>
           </div>
         </div>
       </footer>

@@ -56,13 +56,14 @@ artifacts-monorepo/
 - `/settings` — Business profile and invoice settings
 
 ### Authentication
-- **Replit Auth (OIDC)** — Handles login via Replit's OpenID Connect provider (supports Google sign-in)
-- Session stored in PostgreSQL (`sessions` table) using `connect-pg-simple`
-- User identity stored in `users` table
-- All routes protected by `authMiddleware` — returns 401 if not authenticated
+- **Clerk** — Handles sign-in via Google, Apple, Email, Phone (OTP), and more
+- Clerk sessions are managed externally; the server validates requests using `@clerk/express`
+- `requireAuth` middleware extracts `req.userId` from Clerk session claims on every protected route
+- `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PUBLISHABLE_KEY` — auto-provisioned
 - All data queries scoped by `userId` (per-user isolation)
-- Auth endpoints: `GET /api/login`, `GET /api/callback`, `GET /api/logout`, `GET /api/auth/user`
-- Frontend: `useAuth()` hook from `@workspace/replit-auth-web`; `AuthGuard` component wraps all protected pages
+- Sign-in/sign-up pages at `/sign-in` and `/sign-up` with Clerk embedded UI (indigo-branded, shadcn theme)
+- Landing page uses `<SignInButton mode="modal">` / `<SignUpButton mode="modal">` for CTAs
+- Frontend: `useAuth()` / `useUser()` / `useClerk()` from `@clerk/react`; `AuthGuard` component wraps all protected pages
 
 ### Database Schema (Drizzle ORM)
 - `users` — Authenticated user records (id, name, email, profile image)

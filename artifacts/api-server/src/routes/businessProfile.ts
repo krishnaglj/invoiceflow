@@ -7,18 +7,15 @@ import {
   UpdateBusinessProfileBody,
   UpdateBusinessProfileResponse,
 } from "@workspace/api-zod";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
-router.get("/business-profile", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/business-profile", requireAuth, async (req, res): Promise<void> => {
   const [profile] = await db
     .select()
     .from(businessProfilesTable)
-    .where(eq(businessProfilesTable.userId, req.user.id));
+    .where(eq(businessProfilesTable.userId, req.userId));
   if (!profile) {
     res.status(404).json({ error: "Business profile not found" });
     return;
@@ -26,11 +23,7 @@ router.get("/business-profile", async (req, res): Promise<void> => {
   res.json(GetBusinessProfileResponse.parse(profile));
 });
 
-router.post("/business-profile", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.post("/business-profile", requireAuth, async (req, res): Promise<void> => {
   const parsed = CreateBusinessProfileBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -38,7 +31,7 @@ router.post("/business-profile", async (req, res): Promise<void> => {
   }
   const [profile] = await db
     .insert(businessProfilesTable)
-    .values({ ...parsed.data, userId: req.user.id })
+    .values({ ...parsed.data, userId: req.userId })
     .onConflictDoUpdate({
       target: businessProfilesTable.userId,
       set: { ...parsed.data, updatedAt: new Date() },
@@ -47,11 +40,7 @@ router.post("/business-profile", async (req, res): Promise<void> => {
   res.status(201).json(GetBusinessProfileResponse.parse(profile));
 });
 
-router.patch("/business-profile", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.patch("/business-profile", requireAuth, async (req, res): Promise<void> => {
   const parsed = UpdateBusinessProfileBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -60,7 +49,7 @@ router.patch("/business-profile", async (req, res): Promise<void> => {
   const [existing] = await db
     .select()
     .from(businessProfilesTable)
-    .where(eq(businessProfilesTable.userId, req.user.id));
+    .where(eq(businessProfilesTable.userId, req.userId));
   if (!existing) {
     res.status(404).json({ error: "Business profile not found" });
     return;
@@ -68,7 +57,7 @@ router.patch("/business-profile", async (req, res): Promise<void> => {
   const [profile] = await db
     .update(businessProfilesTable)
     .set({ ...parsed.data, updatedAt: new Date() })
-    .where(eq(businessProfilesTable.userId, req.user.id))
+    .where(eq(businessProfilesTable.userId, req.userId))
     .returning();
   res.json(UpdateBusinessProfileResponse.parse(profile));
 });

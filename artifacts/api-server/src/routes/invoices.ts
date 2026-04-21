@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, ilike, or, desc, sql, and } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 import { db, invoicesTable, invoiceItemsTable, businessProfilesTable } from "@workspace/db";
 import {
   CreateInvoiceBody,
@@ -15,6 +15,7 @@ import {
   MarkInvoicePaidResponse,
   GetNextInvoiceNumberResponse,
 } from "@workspace/api-zod";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
@@ -52,22 +53,18 @@ async function getInvoiceWithItems(id: number, userId: string) {
   return { ...invoice, items };
 }
 
-router.get("/invoices/next-number", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/invoices/next-number", requireAuth, async (req, res): Promise<void> => {
   const [profile] = await db
     .select()
     .from(businessProfilesTable)
-    .where(eq(businessProfilesTable.userId, req.user.id));
+    .where(eq(businessProfilesTable.userId, req.userId));
   const prefix = profile?.invoicePrefix ?? "INV";
   const startNum = profile?.invoiceStartNumber ?? 1;
 
   const [maxResult] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(invoicesTable)
-    .where(eq(invoicesTable.userId, req.user.id));
+    .where(eq(invoicesTable.userId, req.userId));
 
   const count = maxResult?.count ?? 0;
   const nextNum = startNum + count;
@@ -76,11 +73,7 @@ router.get("/invoices/next-number", async (req, res): Promise<void> => {
   res.json(GetNextInvoiceNumberResponse.parse({ invoiceNumber, prefix, number: nextNum }));
 });
 
-router.get("/invoices", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/invoices", requireAuth, async (req, res): Promise<void> => {
   const queryParams = ListInvoicesQueryParams.safeParse(req.query);
   const { status, search, startDate, endDate } = queryParams.success
     ? queryParams.data
@@ -99,7 +92,7 @@ router.get("/invoices", async (req, res): Promise<void> => {
       createdAt: invoicesTable.createdAt,
     })
     .from(invoicesTable)
-    .where(eq(invoicesTable.userId, req.user.id))
+    .where(eq(invoicesTable.userId, req.userId))
     .orderBy(desc(invoicesTable.createdAt));
 
   if (status) invoices = invoices.filter((i) => i.status === status);
@@ -117,11 +110,7 @@ router.get("/invoices", async (req, res): Promise<void> => {
   res.json(ListInvoicesResponse.parse(invoices));
 });
 
-router.post("/invoices", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.post("/invoices", requireAuth, async (req, res): Promise<void> => {
   const parsed = CreateInvoiceBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -142,7 +131,7 @@ router.post("/invoices", async (req, res): Promise<void> => {
     .insert(invoicesTable)
     .values({
       ...invoiceData,
-      userId: req.user.id,
+      userId: req.userId,
       subtotal,
       taxAmount,
       total,
@@ -168,22 +157,18 @@ router.post("/invoices", async (req, res): Promise<void> => {
     );
   }
 
-  const result = await getInvoiceWithItems(invoice.id, req.user.id);
+  const result = await getInvoiceWithItems(invoice.id, req.userId);
   res.status(201).json(GetInvoiceResponse.parse(result));
 });
 
-router.get("/invoices/:id", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
   const params = GetInvoiceParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
 
-  const result = await getInvoiceWithItems(params.data.id, req.user.id);
+  const result = await getInvoiceWithItems(params.data.id, req.userId);
   if (!result) {
     res.status(404).json({ error: "Invoice not found" });
     return;
@@ -192,11 +177,7 @@ router.get("/invoices/:id", async (req, res): Promise<void> => {
   res.json(GetInvoiceResponse.parse(result));
 });
 
-router.patch("/invoices/:id", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.patch("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
   const params = UpdateInvoiceParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -213,7 +194,7 @@ router.patch("/invoices/:id", async (req, res): Promise<void> => {
   const [existing] = await db
     .select()
     .from(invoicesTable)
-    .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.user.id)));
+    .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.userId)));
 
   if (!existing) {
     res.status(404).json({ error: "Invoice not found" });
@@ -231,7 +212,7 @@ router.patch("/invoices/:id", async (req, res): Promise<void> => {
     await db
       .update(invoicesTable)
       .set({ ...invoiceData, subtotal, taxAmount, total })
-      .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.user.id)));
+      .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.userId)));
 
     await db
       .delete(invoiceItemsTable)
@@ -255,18 +236,14 @@ router.patch("/invoices/:id", async (req, res): Promise<void> => {
     await db
       .update(invoicesTable)
       .set(invoiceData)
-      .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.user.id)));
+      .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.userId)));
   }
 
-  const result = await getInvoiceWithItems(params.data.id, req.user.id);
+  const result = await getInvoiceWithItems(params.data.id, req.userId);
   res.json(UpdateInvoiceResponse.parse(result));
 });
 
-router.patch("/invoices/:id/mark-paid", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.patch("/invoices/:id/mark-paid", requireAuth, async (req, res): Promise<void> => {
   const params = MarkInvoicePaidParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -276,7 +253,7 @@ router.patch("/invoices/:id/mark-paid", async (req, res): Promise<void> => {
   const [invoice] = await db
     .update(invoicesTable)
     .set({ status: "paid" })
-    .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.user.id)))
+    .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.userId)))
     .returning();
 
   if (!invoice) {
@@ -284,15 +261,11 @@ router.patch("/invoices/:id/mark-paid", async (req, res): Promise<void> => {
     return;
   }
 
-  const result = await getInvoiceWithItems(params.data.id, req.user.id);
+  const result = await getInvoiceWithItems(params.data.id, req.userId);
   res.json(MarkInvoicePaidResponse.parse(result));
 });
 
-router.delete("/invoices/:id", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.delete("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
   const params = DeleteInvoiceParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -305,7 +278,7 @@ router.delete("/invoices/:id", async (req, res): Promise<void> => {
 
   const [invoice] = await db
     .delete(invoicesTable)
-    .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.user.id)))
+    .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.userId)))
     .returning();
 
   if (!invoice) {

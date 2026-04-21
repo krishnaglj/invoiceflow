@@ -13,14 +13,11 @@ import {
   GetCustomerResponse,
   UpdateCustomerResponse,
 } from "@workspace/api-zod";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
-router.get("/customers", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/customers", requireAuth, async (req, res): Promise<void> => {
   const query = ListCustomersQueryParams.safeParse(req.query);
   const search = query.success ? query.data.search : undefined;
 
@@ -31,7 +28,7 @@ router.get("/customers", async (req, res): Promise<void> => {
       .from(customersTable)
       .where(
         and(
-          eq(customersTable.userId, req.user.id),
+          eq(customersTable.userId, req.userId),
           or(
             ilike(customersTable.name, `%${search}%`),
             ilike(customersTable.phone, `%${search}%`),
@@ -44,18 +41,14 @@ router.get("/customers", async (req, res): Promise<void> => {
     customers = await db
       .select()
       .from(customersTable)
-      .where(eq(customersTable.userId, req.user.id))
+      .where(eq(customersTable.userId, req.userId))
       .orderBy(desc(customersTable.createdAt));
   }
 
   res.json(ListCustomersResponse.parse(customers));
 });
 
-router.post("/customers", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.post("/customers", requireAuth, async (req, res): Promise<void> => {
   const parsed = CreateCustomerBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -63,16 +56,12 @@ router.post("/customers", async (req, res): Promise<void> => {
   }
   const [customer] = await db
     .insert(customersTable)
-    .values({ ...parsed.data, userId: req.user.id })
+    .values({ ...parsed.data, userId: req.userId })
     .returning();
   res.status(201).json(ListCustomersResponseItem.parse(customer));
 });
 
-router.get("/customers/:id", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/customers/:id", requireAuth, async (req, res): Promise<void> => {
   const params = GetCustomerParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -82,7 +71,7 @@ router.get("/customers/:id", async (req, res): Promise<void> => {
   const [customer] = await db
     .select()
     .from(customersTable)
-    .where(and(eq(customersTable.id, params.data.id), eq(customersTable.userId, req.user.id)));
+    .where(and(eq(customersTable.id, params.data.id), eq(customersTable.userId, req.userId)));
 
   if (!customer) {
     res.status(404).json({ error: "Customer not found" });
@@ -96,7 +85,7 @@ router.get("/customers/:id", async (req, res): Promise<void> => {
       totalPaid: sql<number>`coalesce(sum(case when status = 'paid' then total else 0 end), 0)::real`,
     })
     .from(invoicesTable)
-    .where(and(eq(invoicesTable.customerId, customer.id), eq(invoicesTable.userId, req.user.id)));
+    .where(and(eq(invoicesTable.customerId, customer.id), eq(invoicesTable.userId, req.userId)));
 
   const stats = invoiceStats[0] || { totalInvoices: 0, totalBilled: 0, totalPaid: 0 };
   const outstanding = stats.totalBilled - stats.totalPaid;
@@ -104,7 +93,7 @@ router.get("/customers/:id", async (req, res): Promise<void> => {
   const invoices = await db
     .select()
     .from(invoicesTable)
-    .where(and(eq(invoicesTable.customerId, customer.id), eq(invoicesTable.userId, req.user.id)))
+    .where(and(eq(invoicesTable.customerId, customer.id), eq(invoicesTable.userId, req.userId)))
     .orderBy(desc(invoicesTable.createdAt));
 
   const detail = {
@@ -119,11 +108,7 @@ router.get("/customers/:id", async (req, res): Promise<void> => {
   res.json(GetCustomerResponse.parse(detail));
 });
 
-router.patch("/customers/:id", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.patch("/customers/:id", requireAuth, async (req, res): Promise<void> => {
   const params = UpdateCustomerParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -138,7 +123,7 @@ router.patch("/customers/:id", async (req, res): Promise<void> => {
   const [customer] = await db
     .update(customersTable)
     .set(parsed.data)
-    .where(and(eq(customersTable.id, params.data.id), eq(customersTable.userId, req.user.id)))
+    .where(and(eq(customersTable.id, params.data.id), eq(customersTable.userId, req.userId)))
     .returning();
 
   if (!customer) {
@@ -149,11 +134,7 @@ router.patch("/customers/:id", async (req, res): Promise<void> => {
   res.json(UpdateCustomerResponse.parse(customer));
 });
 
-router.delete("/customers/:id", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.delete("/customers/:id", requireAuth, async (req, res): Promise<void> => {
   const params = DeleteCustomerParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -162,7 +143,7 @@ router.delete("/customers/:id", async (req, res): Promise<void> => {
 
   const [customer] = await db
     .delete(customersTable)
-    .where(and(eq(customersTable.id, params.data.id), eq(customersTable.userId, req.user.id)))
+    .where(and(eq(customersTable.id, params.data.id), eq(customersTable.userId, req.userId)))
     .returning();
 
   if (!customer) {

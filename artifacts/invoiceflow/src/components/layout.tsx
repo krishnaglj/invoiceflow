@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { cn, refreshInvoicePrefix } from "@/lib/utils";
 import { LayoutDashboard, Receipt, Users, Package, Settings, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@workspace/replit-auth-web";
+import { useClerk, useUser } from "@clerk/react";
 import { useState, useEffect } from "react";
 import { useGetBusinessProfile, useUpdateBusinessProfile } from "@workspace/api-client-react";
 
@@ -29,8 +29,15 @@ const NAV_ITEMS = [
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { logout, user } = useAuth();
+  const { signOut } = useClerk();
+  const { user } = useUser();
   usePrefixRefresh();
+
+  const handleSignOut = () => signOut({ redirectUrl: "/" });
+
+  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || user?.primaryEmailAddress?.emailAddress || "User";
+  const avatarUrl = user?.imageUrl;
+  const initials = (user?.firstName ?? displayName)[0]?.toUpperCase() ?? "U";
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -65,19 +72,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="p-4 border-t border-border/50 space-y-2">
-          {user && (
-            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/40">
-              {user.profileImageUrl ? (
-                <img src={user.profileImageUrl} alt={user.firstName ?? ""} className="w-7 h-7 rounded-full object-cover" />
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
-                  <span className="text-xs font-bold text-primary">{(user.firstName ?? "U")[0]}</span>
-                </div>
-              )}
-              <span className="text-sm font-medium text-foreground truncate">{user.firstName} {user.lastName}</span>
-            </div>
-          )}
-          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-destructive" onClick={logout}>
+          <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/40">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover" />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
+                <span className="text-xs font-bold text-primary">{initials}</span>
+              </div>
+            )}
+            <span className="text-sm font-medium text-foreground truncate">{displayName}</span>
+          </div>
+          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-destructive" onClick={handleSignOut}>
             <LogOut className="w-5 h-5 mr-3" />
             Sign Out
           </Button>
@@ -112,20 +117,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
             <div className="mt-4 pt-4 border-t">
-              {user && (
-                <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-xl bg-muted/40">
-                  {user.profileImageUrl ? (
-                    <img src={user.profileImageUrl} alt={user.firstName ?? ""} className="w-8 h-8 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary">{(user.firstName ?? "U")[0]}</span>
-                    </div>
-                  )}
-                  <span className="text-base font-medium">{user.firstName} {user.lastName}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-xl bg-muted/40">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                    <span className="text-sm font-bold text-primary">{initials}</span>
+                  </div>
+                )}
+                <span className="text-base font-medium">{displayName}</span>
+              </div>
               <button
-                onClick={() => { setMobileOpen(false); logout(); }}
+                onClick={() => { setMobileOpen(false); handleSignOut(); }}
                 className="flex items-center gap-4 px-4 py-4 rounded-xl font-medium text-lg w-full bg-card text-destructive border"
               >
                 <LogOut className="w-6 h-6" />

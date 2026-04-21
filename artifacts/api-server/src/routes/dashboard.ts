@@ -6,15 +6,12 @@ import {
   GetMonthlyRevenueResponse,
   GetTopCustomersResponse,
 } from "@workspace/api-zod";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
-router.get("/dashboard/stats", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  const uid = req.user.id;
+router.get("/dashboard/stats", requireAuth, async (req, res): Promise<void> => {
+  const uid = req.userId;
 
   const [stats] = await db
     .select({
@@ -44,12 +41,8 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
   res.json(GetDashboardStatsResponse.parse(result));
 });
 
-router.get("/dashboard/monthly-revenue", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  const uid = req.user.id;
+router.get("/dashboard/monthly-revenue", requireAuth, async (req, res): Promise<void> => {
+  const uid = req.userId;
 
   const months = [];
   for (let i = 5; i >= 0; i--) {
@@ -86,12 +79,8 @@ router.get("/dashboard/monthly-revenue", async (req, res): Promise<void> => {
   res.json(GetMonthlyRevenueResponse.parse(result));
 });
 
-router.get("/dashboard/top-customers", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  const uid = req.user.id;
+router.get("/dashboard/top-customers", requireAuth, async (req, res): Promise<void> => {
+  const uid = req.userId;
 
   const topCustomers = await db
     .select({

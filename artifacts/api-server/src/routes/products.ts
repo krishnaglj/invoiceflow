@@ -11,14 +11,11 @@ import {
   ListProductsResponseItem,
   UpdateProductResponse,
 } from "@workspace/api-zod";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
-router.get("/products", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.get("/products", requireAuth, async (req, res): Promise<void> => {
   const query = ListProductsQueryParams.safeParse(req.query);
   const search = query.success ? query.data.search : undefined;
 
@@ -27,24 +24,20 @@ router.get("/products", async (req, res): Promise<void> => {
     products = await db
       .select()
       .from(productsTable)
-      .where(and(eq(productsTable.userId, req.user.id), ilike(productsTable.name, `%${search}%`)))
+      .where(and(eq(productsTable.userId, req.userId), ilike(productsTable.name, `%${search}%`)))
       .orderBy(desc(productsTable.createdAt));
   } else {
     products = await db
       .select()
       .from(productsTable)
-      .where(eq(productsTable.userId, req.user.id))
+      .where(eq(productsTable.userId, req.userId))
       .orderBy(desc(productsTable.createdAt));
   }
 
   res.json(ListProductsResponse.parse(products));
 });
 
-router.post("/products", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.post("/products", requireAuth, async (req, res): Promise<void> => {
   const parsed = CreateProductBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -52,16 +45,12 @@ router.post("/products", async (req, res): Promise<void> => {
   }
   const [product] = await db
     .insert(productsTable)
-    .values({ ...parsed.data, userId: req.user.id })
+    .values({ ...parsed.data, userId: req.userId })
     .returning();
   res.status(201).json(ListProductsResponseItem.parse(product));
 });
 
-router.patch("/products/:id", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.patch("/products/:id", requireAuth, async (req, res): Promise<void> => {
   const params = UpdateProductParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -76,7 +65,7 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
   const [product] = await db
     .update(productsTable)
     .set(parsed.data)
-    .where(and(eq(productsTable.id, params.data.id), eq(productsTable.userId, req.user.id)))
+    .where(and(eq(productsTable.id, params.data.id), eq(productsTable.userId, req.userId)))
     .returning();
 
   if (!product) {
@@ -87,11 +76,7 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
   res.json(UpdateProductResponse.parse(product));
 });
 
-router.delete("/products/:id", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+router.delete("/products/:id", requireAuth, async (req, res): Promise<void> => {
   const params = DeleteProductParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -100,7 +85,7 @@ router.delete("/products/:id", async (req, res): Promise<void> => {
 
   const [product] = await db
     .delete(productsTable)
-    .where(and(eq(productsTable.id, params.data.id), eq(productsTable.userId, req.user.id)))
+    .where(and(eq(productsTable.id, params.data.id), eq(productsTable.userId, req.userId)))
     .returning();
 
   if (!product) {
