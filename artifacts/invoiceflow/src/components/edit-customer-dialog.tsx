@@ -9,8 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { INDIAN_STATES } from "@/lib/utils";
+import { SearchableSelect } from "@/components/searchable-select";
+import { INDIAN_STATES, INDIAN_CITIES } from "@/lib/utils";
+
 import { Save } from "lucide-react";
 
 const schema = z.object({
@@ -131,23 +132,25 @@ export function EditCustomerDialog({ customer, open, onOpenChange }: EditCustome
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>City</Label>
-                  <Input {...form.register("city")} className="h-10" />
+                  <SearchableSelect
+                    options={INDIAN_CITIES}
+                    value={form.watch("city") || ""}
+                    onChange={(v) => form.setValue("city", v)}
+                    placeholder="Select city"
+                    searchPlaceholder="Search city..."
+                    allowClear
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label>State</Label>
-                  <Select
-                    onValueChange={(v) => form.setValue("state", v)}
+                  <SearchableSelect
+                    options={INDIAN_STATES}
                     value={form.watch("state") || ""}
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {INDIAN_STATES.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(v) => form.setValue("state", v)}
+                    placeholder="Select state"
+                    searchPlaceholder="Search state..."
+                    allowClear
+                  />
                 </div>
               </div>
             </div>

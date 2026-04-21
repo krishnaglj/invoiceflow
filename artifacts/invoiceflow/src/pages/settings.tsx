@@ -2,11 +2,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useGetBusinessProfile, useUpdateBusinessProfile } from "@workspace/api-client-react";
-import { INDIAN_STATES, generateInvoicePrefix } from "@/lib/utils";
+import { INDIAN_STATES, INDIAN_CITIES, generateInvoicePrefix } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/searchable-select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -172,12 +172,27 @@ export default function Settings() {
                 <h3 className="font-medium">Address</h3>
                 <div className="space-y-2"><Label>Street</Label><Input {...form.register("address")} /></div>
                 <div className="grid sm:grid-cols-3 gap-5">
-                  <div className="space-y-2"><Label>City</Label><Input {...form.register("city")} /></div>
-                  <div className="space-y-2"><Label>State</Label>
-                    <Select onValueChange={(v) => form.setValue("state", v)} value={form.watch("state")}>
-                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                      <SelectContent>{INDIAN_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                    </Select>
+                  <div className="space-y-2">
+                    <Label>City</Label>
+                    <SearchableSelect
+                      options={INDIAN_CITIES}
+                      value={form.watch("city") || ""}
+                      onChange={(v) => form.setValue("city", v)}
+                      placeholder="Select city"
+                      searchPlaceholder="Search city..."
+                      allowClear
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>State</Label>
+                    <SearchableSelect
+                      options={INDIAN_STATES}
+                      value={form.watch("state") || ""}
+                      onChange={(v) => form.setValue("state", v)}
+                      placeholder="Select state"
+                      searchPlaceholder="Search state..."
+                      allowClear
+                    />
                   </div>
                   <div className="space-y-2"><Label>Pincode</Label><Input {...form.register("pincode")} /></div>
                 </div>
