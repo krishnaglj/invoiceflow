@@ -42,9 +42,9 @@ services:
       DATABASE_URL: postgres://invoiceflow:${POSTGRES_PASSWORD}@db:5432/invoiceflow
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
-      # Optional: enable Google OAuth by setting these
-      # GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      # GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      # Optional: enable Google OAuth (set these in your .env file)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
 
 volumes:
   postgres_data:
