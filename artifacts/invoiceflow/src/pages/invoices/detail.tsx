@@ -233,8 +233,13 @@ export default function InvoiceDetail() {
               )}
             </div>
 
-            <div className="text-center mt-6 text-slate-400 text-sm">
-              Thank you for your business!
+            <div className="mt-8 pt-6 border-t border-dashed border-slate-200 text-center">
+              <p className="text-slate-500 text-sm font-medium tracking-wide">
+                Made with <span className="text-rose-500">♥</span> for your business
+              </p>
+              <p className="text-slate-800 text-base font-semibold mt-1">
+                Thank you — we appreciate your trust!
+              </p>
             </div>
           </div>
         </div>
