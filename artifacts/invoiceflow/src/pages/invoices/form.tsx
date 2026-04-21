@@ -239,53 +239,98 @@ export default function InvoiceForm() {
           </Card>
 
           <Card className="rounded-2xl border-border/50 shadow-sm">
-            <CardContent className="p-0 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b">
-                  <tr>
-                    <th className="p-4 text-left font-medium w-[40%]">Item</th>
-                    <th className="p-4 text-left font-medium w-[15%]">Qty</th>
-                    <th className="p-4 text-left font-medium w-[20%]">Rate (₹)</th>
-                    <th className="p-4 text-right font-medium w-[20%]">Amount</th>
-                    <th className="p-4 text-center font-medium w-[5%]"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {fields.map((field, index) => (
-                    <tr key={field.id} className="group hover:bg-muted/10">
-                      <td className="p-4 space-y-2">
-                        {products && products.length > 0 && (
-                          <Select onValueChange={(v) => handleProductSelect(index, v)}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Pick from library..." /></SelectTrigger>
-                            <SelectContent>
-                              {products.map(p => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        )}
-                        <Input {...form.register(`items.${index}.name`)} placeholder="Item name" className="font-medium" />
-                        <Input {...form.register(`items.${index}.description`)} placeholder="Description (optional)" className="text-xs text-muted-foreground h-8" />
-                      </td>
-                      <td className="p-4 align-top pt-12">
-                        <div className="flex items-center gap-1">
-                          <Input type="number" step="0.01" {...form.register(`items.${index}.quantity`)} className="w-16 px-2" />
-                          <Input {...form.register(`items.${index}.unit`)} className="w-14 px-2 text-xs" placeholder="Unit" />
-                        </div>
-                      </td>
-                      <td className="p-4 align-top pt-12">
-                        <Input type="number" step="0.01" {...form.register(`items.${index}.rate`)} className="px-2" />
-                      </td>
-                      <td className="p-4 align-top pt-14 text-right font-medium">
-                        {formatCurrency((watchItems[index]?.quantity || 0) * (watchItems[index]?.rate || 0))}
-                      </td>
-                      <td className="p-4 align-top pt-12 text-center">
-                        <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="text-muted-foreground hover:text-destructive h-10 w-10">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </td>
+            <CardContent className="p-0">
+
+              {/* Mobile: card per item */}
+              <div className="sm:hidden divide-y">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="p-4 space-y-3">
+                    {products && products.length > 0 && (
+                      <Select onValueChange={(v) => handleProductSelect(index, v)}>
+                        <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Pick from product library..." /></SelectTrigger>
+                        <SelectContent>
+                          {products.map(p => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <Input {...form.register(`items.${index}.name`)} placeholder="Item name *" className="font-medium" />
+                    <Input {...form.register(`items.${index}.description`)} placeholder="Description (optional)" className="text-xs h-9" />
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Qty</Label>
+                        <Input type="number" step="0.01" {...form.register(`items.${index}.quantity`)} className="h-9" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Unit</Label>
+                        <Input {...form.register(`items.${index}.unit`)} placeholder="pcs" className="h-9 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Rate (₹)</Label>
+                        <Input type="number" step="0.01" {...form.register(`items.${index}.rate`)} className="h-9" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-sm font-bold text-primary">
+                        Amount: {formatCurrency((watchItems[index]?.quantity || 0) * (watchItems[index]?.rate || 0))}
+                      </span>
+                      <Button variant="ghost" size="sm" type="button" onClick={() => remove(index)} className="text-muted-foreground hover:text-destructive h-8 px-2 gap-1">
+                        <Trash2 className="w-4 h-4" /> Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 border-b">
+                    <tr>
+                      <th className="p-4 text-left font-medium w-[40%]">Item</th>
+                      <th className="p-4 text-left font-medium w-[15%]">Qty</th>
+                      <th className="p-4 text-left font-medium w-[20%]">Rate (₹)</th>
+                      <th className="p-4 text-right font-medium w-[20%]">Amount</th>
+                      <th className="p-4 text-center font-medium w-[5%]"></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y">
+                    {fields.map((field, index) => (
+                      <tr key={field.id} className="group hover:bg-muted/10">
+                        <td className="p-4 space-y-2">
+                          {products && products.length > 0 && (
+                            <Select onValueChange={(v) => handleProductSelect(index, v)}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Pick from library..." /></SelectTrigger>
+                              <SelectContent>
+                                {products.map(p => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          )}
+                          <Input {...form.register(`items.${index}.name`)} placeholder="Item name" className="font-medium" />
+                          <Input {...form.register(`items.${index}.description`)} placeholder="Description (optional)" className="text-xs text-muted-foreground h-8" />
+                        </td>
+                        <td className="p-4 align-top pt-12">
+                          <div className="flex items-center gap-1">
+                            <Input type="number" step="0.01" {...form.register(`items.${index}.quantity`)} className="w-16 px-2" />
+                            <Input {...form.register(`items.${index}.unit`)} className="w-14 px-2 text-xs" placeholder="Unit" />
+                          </div>
+                        </td>
+                        <td className="p-4 align-top pt-12">
+                          <Input type="number" step="0.01" {...form.register(`items.${index}.rate`)} className="px-2" />
+                        </td>
+                        <td className="p-4 align-top pt-14 text-right font-medium">
+                          {formatCurrency((watchItems[index]?.quantity || 0) * (watchItems[index]?.rate || 0))}
+                        </td>
+                        <td className="p-4 align-top pt-12 text-center">
+                          <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="text-muted-foreground hover:text-destructive h-10 w-10">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
               <div className="p-4 border-t bg-muted/10">
                 <Button type="button" variant="outline" size="sm" onClick={() => append({ name: "", quantity: 1, unit: "pcs", rate: 0 })} className="rounded-xl border-dashed border-2 hover:border-primary">
                   <Plus className="w-4 h-4 mr-2" /> Add Line Item
