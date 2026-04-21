@@ -99,8 +99,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Mobile Nav */}
-      <div className="md:hidden flex flex-col flex-1 w-full min-w-0">
-        <header className="h-16 border-b bg-card flex items-center justify-between px-4 sticky top-0 z-50 no-print">
+      <div className="md:hidden flex flex-col flex-1 w-full min-w-0 overflow-hidden">
+        <header className="h-16 shrink-0 border-b bg-card flex items-center justify-between px-4 sticky top-0 z-50 no-print">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-white font-display font-bold text-lg leading-none">I</span>

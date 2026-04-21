@@ -22,7 +22,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" className="rounded-xl hover-elevate" asChild>
-            <Link href="/customers/new"><Users className="w-4 h-4 mr-2" /> Add Customer</Link>
+            <Link href="/customers"><Users className="w-4 h-4 mr-2" /> Add Customer</Link>
           </Button>
           <Button className="rounded-xl shadow-lg shadow-primary/20 hover-elevate" asChild>
             <Link href="/invoices/new"><Plus className="w-4 h-4 mr-2" /> New Invoice</Link>
