@@ -47,8 +47,8 @@ app.use("/api", router);
 if (process.env.NODE_ENV === "production") {
   const staticDir = path.join(__dirname, "public");
   app.use(express.static(staticDir));
-  // SPA fallback — any non-API route serves index.html
-  app.get("*", (_req, res) => {
+  // SPA fallback — any non-API route serves index.html (Express 5 wildcard syntax)
+  app.get("/{*splat}", (_req, res) => {
     res.sendFile(path.join(staticDir, "index.html"));
   });
 }
