@@ -11,7 +11,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, Save, Send, Eye } from "lucide-react";
+import { Plus, Trash2, Save, Send } from "lucide-react";
+import { CustomerSearch } from "@/components/customer-search";
 import { useToast } from "@/hooks/use-toast";
 import { useInvoiceCalculations } from "@/hooks/use-invoice-calc";
 import { formatCurrency } from "@/lib/utils";
@@ -204,12 +205,19 @@ export default function InvoiceForm() {
                   <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Bill To</h3>
                   <div className="space-y-3">
                     {customers && customers.length > 0 && (
-                      <Select onValueChange={handleCustomerSelect}>
-                        <SelectTrigger className="bg-background"><SelectValue placeholder="Select existing customer..." /></SelectTrigger>
-                        <SelectContent>
-                          {customers.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <CustomerSearch
+                        customers={customers}
+                        selectedId={form.watch("customerId")}
+                        onSelect={handleCustomerSelect}
+                        onClear={() => {
+                          form.setValue("customerId", undefined);
+                          form.setValue("customerName", "");
+                          form.setValue("customerPhone", "");
+                          form.setValue("customerEmail", "");
+                          form.setValue("customerAddress", "");
+                          form.setValue("customerGstin", "");
+                        }}
+                      />
                     )}
                     <Input {...form.register("customerName")} placeholder="Customer Name *" className="bg-background font-medium" />
                     <Input {...form.register("customerPhone")} placeholder="Phone" className="bg-background" />
