@@ -5,7 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 
 import Landing from "./pages/landing";
-import AuthPage from "./pages/auth";
 import Onboarding from "./pages/onboarding";
 import Dashboard from "./pages/dashboard";
 import Customers from "./pages/customers";
@@ -18,6 +17,17 @@ import Settings from "./pages/settings";
 
 import { AuthGuard } from "./components/auth-guard";
 import { AppLayout } from "./components/layout";
+import { useAuth } from "@workspace/replit-auth-web";
+import { useEffect } from "react";
+
+function AuthRequired({ children }: { children: React.ReactNode }) {
+  const { isLoading, isAuthenticated, login } = useAuth();
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) login();
+  }, [isLoading, isAuthenticated, login]);
+  if (isLoading || !isAuthenticated) return null;
+  return <>{children}</>;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,25 +52,23 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
-      <Route path="/login"><AuthPage isLogin={true} /></Route>
-      <Route path="/signup"><AuthPage isLogin={false} /></Route>
-      <Route path="/onboarding" component={Onboarding} />
-      
+      <Route path="/onboarding"><AuthRequired><Onboarding /></AuthRequired></Route>
+
       {/* Protected Routes */}
       <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
-      
+
       <Route path="/customers"><ProtectedRoute component={Customers} /></Route>
       <Route path="/customers/:id"><ProtectedRoute component={CustomerDetail} /></Route>
-      
+
       <Route path="/products"><ProtectedRoute component={Products} /></Route>
-      
+
       <Route path="/invoices"><ProtectedRoute component={InvoicesList} /></Route>
       <Route path="/invoices/new"><ProtectedRoute component={InvoiceForm} /></Route>
       <Route path="/invoices/:id/edit"><ProtectedRoute component={InvoiceForm} /></Route>
       <Route path="/invoices/:id"><ProtectedRoute component={InvoiceDetail} /></Route>
-      
+
       <Route path="/settings"><ProtectedRoute component={Settings} /></Route>
-      
+
       <Route component={NotFound} />
     </Switch>
   );

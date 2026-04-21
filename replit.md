@@ -44,8 +44,7 @@ artifacts-monorepo/
 
 ### Pages
 - `/` — Landing page (marketing)
-- `/login`, `/signup` — Auth pages (UI only, no real auth)
-- `/onboarding` — 3-step business profile setup (redirected to automatically if no profile exists)
+- `/onboarding` — 3-step business profile setup (redirected to automatically if no profile exists after login)
 - `/dashboard` — Stats, revenue chart, recent invoices, top customers
 - `/invoices` — Invoice list with status filters and search
 - `/invoices/new` — Create invoice with dynamic line items
@@ -56,11 +55,22 @@ artifacts-monorepo/
 - `/products` — Product/service library
 - `/settings` — Business profile and invoice settings
 
+### Authentication
+- **Replit Auth (OIDC)** — Handles login via Replit's OpenID Connect provider (supports Google sign-in)
+- Session stored in PostgreSQL (`sessions` table) using `connect-pg-simple`
+- User identity stored in `users` table
+- All routes protected by `authMiddleware` — returns 401 if not authenticated
+- All data queries scoped by `userId` (per-user isolation)
+- Auth endpoints: `GET /api/login`, `GET /api/callback`, `GET /api/logout`, `GET /api/auth/user`
+- Frontend: `useAuth()` hook from `@workspace/replit-auth-web`; `AuthGuard` component wraps all protected pages
+
 ### Database Schema (Drizzle ORM)
-- `business_profiles` — Business info, bank details, invoice settings
-- `customers` — Customer directory
-- `products` — Product/service library with default rates
-- `invoices` — Invoice records with computed totals
+- `users` — Authenticated user records (id, name, email, profile image)
+- `sessions` — Server-side session storage
+- `business_profiles` — Business info, bank details, invoice settings (scoped by userId)
+- `customers` — Customer directory (scoped by userId)
+- `products` — Product/service library with default rates (scoped by userId)
+- `invoices` — Invoice records with computed totals (scoped by userId)
 - `invoice_items` — Line items per invoice
 
 ### API Endpoints (under /api)

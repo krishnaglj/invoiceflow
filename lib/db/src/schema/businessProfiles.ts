@@ -1,9 +1,10 @@
-import { pgTable, serial, text, integer, real, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, real, timestamp, boolean, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
 export const businessProfilesTable = pgTable("business_profiles", {
   id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
   shopName: text("shop_name").notNull(),
   ownerName: text("owner_name").notNull(),
   email: text("email").notNull(),
@@ -26,7 +27,7 @@ export const businessProfilesTable = pgTable("business_profiles", {
   defaultPaymentTerms: text("default_payment_terms"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+}, (t) => [unique("business_profiles_user_id_unique").on(t.userId)]);
 
 export const insertBusinessProfileSchema = createInsertSchema(businessProfilesTable).omit({
   id: true,

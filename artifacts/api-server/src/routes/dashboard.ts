@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql, desc } from "drizzle-orm";
+import { eq, sql, desc, and } from "drizzle-orm";
 import { db, invoicesTable, customersTable } from "@workspace/db";
 import {
   GetDashboardStatsResponse,
@@ -10,6 +10,12 @@ import {
 const router: IRouter = Router();
 
 router.get("/dashboard/stats", async (req, res): Promise<void> => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const uid = req.user.id;
+
   const [stats] = await db
     .select({
       totalRevenue: sql<number>`coalesce(sum(case when status = 'paid' then total else 0 end), 0)::real`,
@@ -18,11 +24,13 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
       overdueCount: sql<number>`count(case when status = 'overdue' then 1 end)::int`,
       totalInvoices: sql<number>`count(*)::int`,
     })
-    .from(invoicesTable);
+    .from(invoicesTable)
+    .where(eq(invoicesTable.userId, uid));
 
   const [customerCount] = await db
     .select({ count: sql<number>`count(*)::int` })
-    .from(customersTable);
+    .from(customersTable)
+    .where(eq(customersTable.userId, uid));
 
   const result = {
     totalRevenue: stats?.totalRevenue ?? 0,
@@ -37,7 +45,12 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
 });
 
 router.get("/dashboard/monthly-revenue", async (req, res): Promise<void> => {
-  // Generate last 6 months
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const uid = req.user.id;
+
   const months = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date();
@@ -55,6 +68,7 @@ router.get("/dashboard/monthly-revenue", async (req, res): Promise<void> => {
       invoiceCount: sql<number>`count(*)::int`,
     })
     .from(invoicesTable)
+    .where(eq(invoicesTable.userId, uid))
     .groupBy(sql`to_char(created_at, 'YYYY-MM')`)
     .orderBy(sql`to_char(created_at, 'YYYY-MM')`);
 
@@ -73,6 +87,12 @@ router.get("/dashboard/monthly-revenue", async (req, res): Promise<void> => {
 });
 
 router.get("/dashboard/top-customers", async (req, res): Promise<void> => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const uid = req.user.id;
+
   const topCustomers = await db
     .select({
       id: invoicesTable.customerId,
@@ -81,7 +101,7 @@ router.get("/dashboard/top-customers", async (req, res): Promise<void> => {
       invoiceCount: sql<number>`count(*)::int`,
     })
     .from(invoicesTable)
-    .where(sql`customer_id is not null`)
+    .where(and(eq(invoicesTable.userId, uid), sql`customer_id is not null`))
     .groupBy(invoicesTable.customerId, invoicesTable.customerName)
     .orderBy(desc(sql`sum(total)`))
     .limit(5);
