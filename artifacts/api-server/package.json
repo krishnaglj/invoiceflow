@@ -10,13 +10,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@clerk/express": "^2.1.5",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/semantic-conventions": "^1.40.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
+    "better-auth": "^1.6.5",
     "cors": "^2",
     "drizzle-orm": "catalog:",
     "express": "^5",
-    "http-proxy-middleware": "^3.0.5",
     "pino": "^9",
     "pino-http": "^10"
   },

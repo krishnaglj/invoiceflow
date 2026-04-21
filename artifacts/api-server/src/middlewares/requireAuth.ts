@@ -1,5 +1,6 @@
-import { getAuth } from "@clerk/express";
+import { fromNodeHeaders } from "better-auth/node";
 import { type Request, type Response, type NextFunction } from "express";
+import { auth } from "../auth";
 
 declare global {
   namespace Express {
@@ -9,13 +10,22 @@ declare global {
   }
 }
 
-export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
-  const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId as string | undefined || auth?.userId;
-  if (!userId) {
+export const requireAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+    if (!session?.user?.id) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    req.userId = session.user.id;
+    next();
+  } catch {
     res.status(401).json({ error: "Unauthorized" });
-    return;
   }
-  req.userId = userId;
-  next();
 };

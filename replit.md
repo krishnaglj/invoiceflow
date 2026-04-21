@@ -56,18 +56,22 @@ artifacts-monorepo/
 - `/settings` — Business profile and invoice settings
 
 ### Authentication
-- **Clerk** — Handles sign-in via Google, Apple, Email, Phone (OTP), and more
-- Clerk sessions are managed externally; the server validates requests using `@clerk/express`
-- `requireAuth` middleware extracts `req.userId` from Clerk session claims on every protected route
-- `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PUBLISHABLE_KEY` — auto-provisioned
+- **Better Auth** — Fully self-hosted, stores everything in your own PostgreSQL database
+- Sessions managed with secure HTTP-only cookies; no external auth service needed
+- `requireAuth` middleware calls `auth.api.getSession()` on every protected route
+- `BETTER_AUTH_SECRET` env var required; `BETTER_AUTH_URL` defaults to `REPLIT_DEV_DOMAIN` in dev
 - All data queries scoped by `userId` (per-user isolation)
-- Sign-in/sign-up pages at `/sign-in` and `/sign-up` with Clerk embedded UI (indigo-branded, shadcn theme)
-- Landing page uses `<SignInButton mode="modal">` / `<SignUpButton mode="modal">` for CTAs
-- Frontend: `useAuth()` / `useUser()` / `useClerk()` from `@clerk/react`; `AuthGuard` component wraps all protected pages
+- Sign-in page at `/sign-in` and sign-up at `/sign-up` — custom forms built with shadcn/ui
+- Landing page uses `<Link>` to `/sign-in` and `/sign-up` routes
+- Google OAuth optional — enable by setting `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` env vars
+- Frontend: `useSession()`, `signIn`, `signOut`, `signUp` from `better-auth/react` via `src/lib/auth-client.ts`
+- DB tables: `auth_user`, `auth_session`, `auth_account`, `auth_verification` (managed by Better Auth)
 
 ### Database Schema (Drizzle ORM)
-- `users` — Authenticated user records (id, name, email, profile image)
-- `sessions` — Server-side session storage
+- `auth_user` — User records managed by Better Auth
+- `auth_session` — Active session tokens
+- `auth_account` — OAuth provider accounts linked to users
+- `auth_verification` — Email verification tokens
 - `business_profiles` — Business info, bank details, invoice settings (scoped by userId)
 - `customers` — Customer directory (scoped by userId)
 - `products` — Product/service library with default rates (scoped by userId)

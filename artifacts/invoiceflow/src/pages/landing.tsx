@@ -5,7 +5,7 @@ import {
   Star, MessageSquare, ClipboardList, Send
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { SignInButton, SignUpButton } from "@clerk/react";
+import { Link } from "wouter";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -25,14 +25,14 @@ export default function Landing() {
           <span className="font-display font-bold text-2xl tracking-tight text-foreground">InvoiceFlow</span>
         </div>
         <div className="flex items-center gap-3">
-          <SignInButton mode="modal">
+          <Link href="/sign-in">
             <Button variant="ghost" className="hidden sm:flex rounded-full">Sign In</Button>
-          </SignInButton>
-          <SignUpButton mode="modal">
+          </Link>
+          <Link href="/sign-up">
             <Button className="rounded-full shadow-lg shadow-primary/20 px-6">
               Get Started Free
             </Button>
-          </SignUpButton>
+          </Link>
         </div>
       </nav>
 
@@ -58,16 +58,16 @@ export default function Landing() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <SignUpButton mode="modal">
+              <Link href="/sign-up">
                 <Button size="lg" className="rounded-full h-14 px-8 text-lg shadow-xl shadow-primary/25">
                   Get Started Free <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
-              </SignUpButton>
-              <SignInButton mode="modal">
+              </Link>
+              <Link href="/sign-in">
                 <Button size="lg" variant="outline" className="rounded-full h-14 px-8 text-lg">
                   Sign In <ChevronRight className="ml-1 w-5 h-5" />
                 </Button>
-              </SignInButton>
+              </Link>
             </div>
 
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-muted-foreground">
@@ -329,7 +329,7 @@ export default function Landing() {
           <p className="text-xl text-white/70 mb-10">
             Join thousands of Indian shopkeepers who save hours every week with InvoiceFlow.
           </p>
-          <SignUpButton mode="modal">
+          <Link href="/sign-up">
             <Button
               size="lg"
               variant="secondary"
@@ -337,7 +337,7 @@ export default function Landing() {
             >
               Get Started — It's Free <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
-          </SignUpButton>
+          </Link>
           <p className="text-white/50 text-sm mt-6">No credit card required · Google · Apple · Email · Phone</p>
         </motion.div>
       </section>
@@ -356,9 +356,9 @@ export default function Landing() {
           </p>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MessageSquare className="w-4 h-4" />
-            <SignInButton mode="modal">
-              <button className="hover:text-foreground transition-colors">Get Support</button>
-            </SignInButton>
+            <Link href="/sign-in" className="hover:text-foreground transition-colors">
+              Get Support
+            </Link>
           </div>
         </div>
       </footer>

@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { cn, refreshInvoicePrefix } from "@/lib/utils";
 import { LayoutDashboard, Receipt, Users, Package, Settings, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useClerk, useUser } from "@clerk/react";
+import { useSession, signOut } from "@/lib/auth-client";
 import { useState, useEffect } from "react";
 import { useGetBusinessProfile, useUpdateBusinessProfile } from "@workspace/api-client-react";
 
@@ -27,17 +27,20 @@ const NAV_ITEMS = [
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { signOut } = useClerk();
-  const { user } = useUser();
+  const { data: session } = useSession();
   usePrefixRefresh();
 
-  const handleSignOut = () => signOut({ redirectUrl: "/" });
+  const user = session?.user;
+  const displayName = user?.name || user?.email || "User";
+  const avatarUrl = user?.image;
+  const initials = (user?.name ?? displayName)[0]?.toUpperCase() ?? "U";
 
-  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || user?.primaryEmailAddress?.emailAddress || "User";
-  const avatarUrl = user?.imageUrl;
-  const initials = (user?.firstName ?? displayName)[0]?.toUpperCase() ?? "U";
+  const handleSignOut = async () => {
+    await signOut();
+    setLocation("/");
+  };
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -56,12 +59,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {NAV_ITEMS.map((item) => {
             const isActive = location === item.href || location.startsWith(item.href + "/");
             return (
-              <Link key={item.href} href={item.href}
+              <Link
+                key={item.href}
+                href={item.href}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-all duration-200",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-md shadow-primary/10"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground hover-elevate"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground hover-elevate",
                 )}
               >
                 <item.icon className="w-5 h-5" />
@@ -82,7 +87,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             )}
             <span className="text-sm font-medium text-foreground truncate">{displayName}</span>
           </div>
-          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-destructive" onClick={handleSignOut}>
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-muted-foreground hover:text-destructive"
+            onClick={handleSignOut}
+          >
             <LogOut className="w-5 h-5 mr-3" />
             Sign Out
           </Button>
@@ -106,10 +115,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {mobileOpen && (
           <div className="fixed inset-0 top-16 bg-background z-40 p-4 flex flex-col gap-2 overflow-y-auto no-print">
             {NAV_ITEMS.map((item) => (
-              <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
                 className={cn(
                   "flex items-center gap-4 px-4 py-4 rounded-xl font-medium text-lg",
-                  location.startsWith(item.href) ? "bg-primary text-primary-foreground" : "bg-card text-foreground border"
+                  location.startsWith(item.href)
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-foreground border",
                 )}
               >
                 <item.icon className="w-6 h-6" />
