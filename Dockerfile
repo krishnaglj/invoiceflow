@@ -1,5 +1,7 @@
 # ── Stage 1: Install all dependencies ────────────────────────────────────────
-FROM node:22-alpine AS deps
+# Use node:22-slim (Debian/glibc) so native packages like rollup match the
+# lockfile's linux-x64-gnu binaries. Alpine (musl) causes MODULE_NOT_FOUND.
+FROM node:22-slim AS deps
 
 RUN corepack enable && corepack prepare pnpm@10 --activate
 WORKDIR /app
@@ -44,7 +46,7 @@ ENV DATABASE_URL=""
 CMD ["pnpm", "--filter", "@workspace/db", "run", "push-force"]
 
 # ── Stage 5: Minimal production image ─────────────────────────────────────────
-FROM node:22-alpine AS runner
+FROM node:22-slim AS runner
 
 WORKDIR /app
 
