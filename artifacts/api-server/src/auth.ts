@@ -48,7 +48,9 @@ export const auth = betterAuth({
   trustedOrigins,
   advanced: {
     defaultCookieAttributes: {
-      sameSite: "none",
+      // In production, frontend+API are on the same domain → use "lax" (more secure)
+      // In Replit dev, they are cross-origin via proxy → use "none" (requires secure:true)
+      sameSite: process.env.NODE_ENV === "production" ? "lax" : "none",
       secure: true,
     },
   },

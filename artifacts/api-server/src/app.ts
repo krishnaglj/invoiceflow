@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import cors from "cors";
+import path from "path";
 import pinoHttp from "pino-http";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./auth";
@@ -40,5 +41,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+// In production, serve the frontend static files from dist/public
+// (Vite build output is copied here by the Dockerfile)
+if (process.env.NODE_ENV === "production") {
+  const staticDir = path.join(__dirname, "public");
+  app.use(express.static(staticDir));
+  // SPA fallback — any non-API route serves index.html
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(staticDir, "index.html"));
+  });
+}
 
 export default app;
