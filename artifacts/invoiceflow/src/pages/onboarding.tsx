@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,9 +42,10 @@ export default function Onboarding() {
     defaultValues: { invoicePrefix: "INV-", defaultTaxPercent: 0 }
   });
 
+  const prefixEdited = useRef(false);
   const shopName = form.watch("shopName");
   useEffect(() => {
-    if (shopName && shopName.length >= 2) {
+    if (!prefixEdited.current && shopName && shopName.length >= 2) {
       form.setValue("invoicePrefix", generateInvoicePrefix(shopName), { shouldDirty: false });
     }
   }, [shopName, form]);
@@ -181,8 +182,13 @@ export default function Onboarding() {
               <hr className="my-4" />
               <div className="grid sm:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <Label>Invoice Prefix <span className="text-muted-foreground font-normal text-xs">(auto-generated)</span></Label>
-                  <Input {...form.register("invoicePrefix")} className="h-12 font-mono" />
+                  <Label>Invoice Prefix</Label>
+                  <Input
+                    {...form.register("invoicePrefix", {
+                      onChange: () => { prefixEdited.current = true; }
+                    })}
+                    className="h-12 font-mono"
+                  />
                   <p className="text-xs text-muted-foreground">
                     Your invoices will look like: <span className="font-mono font-semibold text-foreground">{form.watch("invoicePrefix") || "INV-"}001</span>
                   </p>
