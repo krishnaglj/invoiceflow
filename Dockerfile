@@ -16,7 +16,7 @@ COPY lib/api-zod/package.json            ./lib/api-zod/
 COPY lib/db/package.json                 ./lib/db/
 COPY lib/replit-auth-web/package.json    ./lib/replit-auth-web/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # ── Stage 2: Build the frontend ───────────────────────────────────────────────
 FROM deps AS frontend-builder
