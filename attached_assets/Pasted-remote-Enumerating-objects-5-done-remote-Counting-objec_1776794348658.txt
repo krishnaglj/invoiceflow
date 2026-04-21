@@ -1,0 +1,101 @@
+remote: Enumerating objects: 5, done.
+remote: Counting objects: 100% (5/5), done.
+remote: Compressing objects: 100% (1/1), done.
+remote: Total 3 (delta 2), reused 3 (delta 2), pack-reused 0 (from 0)
+Unpacking objects: 100% (3/3), 327 bytes | 327.00 KiB/s, done.
+From https://github.com/krishnaglj/invoiceflow
+   766b058..b685311  main       -> origin/main
+Updating 766b058..b685311
+Fast-forward
+ Dockerfile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+[+] Building 24.8s (21/24)                                                                                                                                                          
+ => [internal] load local bake definitions                                                                                                                                     0.0s
+ => => reading from stdin 534B                                                                                                                                                 0.0s
+ => [internal] load build definition from Dockerfile                                                                                                                           0.0s
+ => => transferring dockerfile: 2.62kB                                                                                                                                         0.0s
+ => [internal] load metadata for docker.io/library/node:22-alpine                                                                                                              0.3s
+ => [internal] load .dockerignore                                                                                                                                              0.0s
+ => => transferring context: 2B                                                                                                                                                0.0s
+ => [internal] load build context                                                                                                                                              0.0s
+ => => transferring context: 57.70kB                                                                                                                                           0.0s
+ => [deps  1/12] FROM docker.io/library/node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f                                                 0.0s
+ => => resolve docker.io/library/node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f                                                        0.0s
+ => CACHED [runner 2/5] WORKDIR /app                                                                                                                                           0.0s
+ => CACHED [deps  2/12] RUN corepack enable && corepack prepare pnpm@10 --activate                                                                                             0.0s
+ => CACHED [deps  3/12] WORKDIR /app                                                                                                                                           0.0s
+ => CACHED [deps  4/12] COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./                                                                                                0.0s
+ => CACHED [deps  5/12] COPY artifacts/api-server/package.json   ./artifacts/api-server/                                                                                       0.0s
+ => CACHED [deps  6/12] COPY artifacts/invoiceflow/package.json  ./artifacts/invoiceflow/                                                                                      0.0s
+ => CACHED [deps  7/12] COPY lib/api-client-react/package.json   ./lib/api-client-react/                                                                                       0.0s
+ => CACHED [deps  8/12] COPY lib/api-spec/package.json           ./lib/api-spec/                                                                                               0.0s
+ => CACHED [deps  9/12] COPY lib/api-zod/package.json            ./lib/api-zod/                                                                                                0.0s
+ => CACHED [deps 10/12] COPY lib/db/package.json                 ./lib/db/                                                                                                     0.0s
+ => CACHED [deps 11/12] COPY lib/replit-auth-web/package.json    ./lib/replit-auth-web/                                                                                        0.0s
+ => [deps 12/12] RUN pnpm install --no-frozen-lockfile                                                                                                                        21.3s
+ => [frontend-builder 1/2] COPY . .                                                                                                                                            0.9s 
+ => ERROR [frontend-builder 2/2] RUN PORT=3000 BASE_PATH=/ NODE_ENV=production     pnpm --filter @workspace/invoiceflow run build                                              1.9s 
+ => CANCELED [api-builder 2/2] RUN pnpm --filter @workspace/api-server run build                                                                                               2.0s 
+------                                                                                                                                                                              
+ > [frontend-builder 2/2] RUN PORT=3000 BASE_PATH=/ NODE_ENV=production     pnpm --filter @workspace/invoiceflow run build:                                                         
+1.265                                                                                                                                                                               
+1.265 > @workspace/invoiceflow@0.0.0 build /app/artifacts/invoiceflow                                                                                                               
+1.265 > vite build --config vite.config.ts                                                                                                                                          
+1.265                                                                                                                                                                               
+1.664 /app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js:115                                                                                                  
+1.664           throw new Error(                                                                                                                                                    
+1.664                 ^
+1.664 
+1.664 Error: Cannot find module @rollup/rollup-linux-x64-musl. npm has a bug related to optional dependencies (https://github.com/npm/cli/issues/4828). Please try `npm i` again after removing both package-lock.json and node_modules directory.
+1.664     at requireWithFriendlyError (/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js:115:9)
+1.664     at Object.<anonymous> (/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js:124:76)
+1.664     at Module._compile (node:internal/modules/cjs/loader:1705:14)
+1.664     at Object..js (node:internal/modules/cjs/loader:1838:10)
+1.664     at Module.load (node:internal/modules/cjs/loader:1441:32)
+1.664     at Function._load (node:internal/modules/cjs/loader:1263:12)
+1.664     at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+1.664     at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+1.664     at cjsLoader (node:internal/modules/esm/translators:309:5)
+1.664     at ModuleWrap.<anonymous> (node:internal/modules/esm/translators:202:7) {
+1.664   [cause]: Error: Cannot find module '@rollup/rollup-linux-x64-musl'
+1.664   Require stack:
+1.664   - /app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js
+1.664       at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+1.664       at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+1.664       at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+1.664       at Function._load (node:internal/modules/cjs/loader:1192:37)
+1.664       at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+1.664       at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+1.664       at Module.require (node:internal/modules/cjs/loader:1463:12)
+1.664       at require (node:internal/modules/helpers:147:16)
+1.664       at requireWithFriendlyError (/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js:97:10)
+1.664       at Object.<anonymous> (/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js:124:76) {
+1.664     code: 'MODULE_NOT_FOUND',
+1.664     requireStack: [
+1.664       '/app/node_modules/.pnpm/rollup@4.59.0/node_modules/rollup/dist/native.js'
+1.664     ]
+1.664   }
+1.664 }
+1.664 
+1.664 Node.js v22.22.2
+1.740 /app/artifacts/invoiceflow:
+1.740  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/invoiceflow@0.0.0 build: `vite build --config vite.config.ts`
+1.740 Exit status 1
+------
+[+] build 0/1
+ ⠙ Image invoiceflow-app Building                                                                                                                                              24.8s
+Dockerfile:27
+
+--------------------
+
+  26 |     # PORT is required by vite.config.ts validation (only affects dev server, not build output)
+
+  27 | >>> RUN PORT=3000 BASE_PATH=/ NODE_ENV=production \
+
+  28 | >>>     pnpm --filter @workspace/invoiceflow run build
+
+  29 |     
+
+--------------------
+
+failed to solve: process "/bin/sh -c PORT=3000 BASE_PATH=/ NODE_ENV=production     pnpm --filter @workspace/invoiceflow run build" did not complete successfully: exit code: 1
