@@ -1,9 +1,22 @@
 import { Link, useLocation } from "wouter";
-import { cn } from "@/lib/utils";
+import { cn, refreshInvoicePrefix } from "@/lib/utils";
 import { LayoutDashboard, Receipt, Users, Package, Settings, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@workspace/replit-auth-web";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useGetBusinessProfile, useUpdateBusinessProfile } from "@workspace/api-client-react";
+
+function usePrefixRefresh() {
+  const { data: profile } = useGetBusinessProfile();
+  const update = useUpdateBusinessProfile();
+  useEffect(() => {
+    if (!profile?.invoicePrefix) return;
+    const newPrefix = refreshInvoicePrefix(profile.invoicePrefix);
+    if (newPrefix) {
+      update.mutate({ data: { invoicePrefix: newPrefix } });
+    }
+  }, [profile?.invoicePrefix]);
+}
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -17,6 +30,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { logout, user } = useAuth();
+  usePrefixRefresh();
 
   return (
     <div className="min-h-screen flex bg-background">
