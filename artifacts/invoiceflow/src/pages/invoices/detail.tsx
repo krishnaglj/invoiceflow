@@ -202,38 +202,40 @@ export default function InvoiceDetail() {
             </div>
           </div>
 
-          {/* Footer Info */}
-          <div className="grid grid-cols-2 gap-8 text-sm text-slate-600 border-t pt-8">
-            <div>
-              {invoice.notes && (
-                <div className="mb-6">
-                  <h4 className="font-bold text-slate-900 mb-1">Notes:</h4>
-                  <p className="whitespace-pre-line">{invoice.notes}</p>
-                </div>
-              )}
-              {invoice.paymentTerms && (
-                <div>
-                  <h4 className="font-bold text-slate-900 mb-1">Terms & Conditions:</h4>
-                  <p className="whitespace-pre-line">{invoice.paymentTerms}</p>
+          {/* Footer Info + Thank You — kept together to avoid page break */}
+          <div style={{ breakInside: "avoid", pageBreakInside: "avoid" }}>
+            <div className="grid grid-cols-2 gap-8 text-sm text-slate-600 border-t pt-8">
+              <div>
+                {invoice.notes && (
+                  <div className="mb-6">
+                    <h4 className="font-bold text-slate-900 mb-1">Notes:</h4>
+                    <p className="whitespace-pre-line">{invoice.notes}</p>
+                  </div>
+                )}
+                {invoice.paymentTerms && (
+                  <div>
+                    <h4 className="font-bold text-slate-900 mb-1">Terms & Conditions:</h4>
+                    <p className="whitespace-pre-line">{invoice.paymentTerms}</p>
+                  </div>
+                )}
+              </div>
+
+              {invoice.showBankDetails && (
+                <div className="bg-slate-50 p-4 rounded-lg self-start">
+                  <h4 className="font-bold text-slate-900 mb-3 uppercase tracking-wider text-xs">Bank Details for Payment</h4>
+                  <div className="space-y-1">
+                    <p><span className="text-slate-500 w-24 inline-block">Bank:</span> <span className="font-medium text-slate-900">{profile.bankName}</span></p>
+                    <p><span className="text-slate-500 w-24 inline-block">Account:</span> <span className="font-medium text-slate-900">{profile.accountNumber}</span></p>
+                    <p><span className="text-slate-500 w-24 inline-block">IFSC:</span> <span className="font-medium text-slate-900">{profile.ifscCode}</span></p>
+                    <p><span className="text-slate-500 w-24 inline-block">Name:</span> <span className="font-medium text-slate-900">{profile.accountHolder}</span></p>
+                  </div>
                 </div>
               )}
             </div>
-            
-            {invoice.showBankDetails && (
-              <div className="bg-slate-50 p-4 rounded-lg self-start">
-                <h4 className="font-bold text-slate-900 mb-3 uppercase tracking-wider text-xs">Bank Details for Payment</h4>
-                <div className="space-y-1">
-                  <p><span className="text-slate-500 w-24 inline-block">Bank:</span> <span className="font-medium text-slate-900">{profile.bankName}</span></p>
-                  <p><span className="text-slate-500 w-24 inline-block">Account:</span> <span className="font-medium text-slate-900">{profile.accountNumber}</span></p>
-                  <p><span className="text-slate-500 w-24 inline-block">IFSC:</span> <span className="font-medium text-slate-900">{profile.ifscCode}</span></p>
-                  <p><span className="text-slate-500 w-24 inline-block">Name:</span> <span className="font-medium text-slate-900">{profile.accountHolder}</span></p>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          <div className="text-center mt-16 text-slate-400 text-sm">
-            Thank you for your business!
+
+            <div className="text-center mt-6 text-slate-400 text-sm">
+              Thank you for your business!
+            </div>
           </div>
         </div>
       </div>
