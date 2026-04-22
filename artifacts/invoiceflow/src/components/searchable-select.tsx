@@ -1,14 +1,6 @@
-import { useState } from "react";
-import { Check, ChevronsUpDown, X } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Check, ChevronsUpDown, X, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -35,13 +27,22 @@ export function SearchableSelect({
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const filtered = query.trim() === ""
     ? options
     : options.filter(o => o.toLowerCase().includes(query.toLowerCase()));
 
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      setQuery("");
+    }
+  }, [open]);
+
   return (
-    <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setQuery(""); }}>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -72,45 +73,56 @@ export function SearchableSelect({
       </PopoverTrigger>
 
       <PopoverContent
-        className="p-0 rounded-xl border shadow-lg"
+        className="p-0 rounded-xl border shadow-lg bg-popover"
         style={{ width: "var(--radix-popover-trigger-width)" }}
         align="start"
         sideOffset={4}
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <Command shouldFilter={false}>
-          <CommandInput
-            placeholder={searchPlaceholder}
-            value={query}
-            onValueChange={setQuery}
-            className="h-10"
-          />
-          <CommandList className="max-h-56 overflow-y-auto">
-            {filtered.length === 0 && (
-              <CommandEmpty>
-                <p className="py-6 text-center text-sm text-muted-foreground">{emptyText}</p>
-              </CommandEmpty>
+        <div className="flex flex-col" style={{ maxHeight: "260px" }}>
+          <div className="flex items-center gap-2 border-b px-3 py-2 shrink-0">
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+            {query && (
+              <button onClick={() => setQuery("")} className="text-muted-foreground hover:text-foreground">
+                <X className="h-3 w-3" />
+              </button>
             )}
-            {filtered.length > 0 && (
-              <CommandGroup>
-                {filtered.map((option) => (
-                  <CommandItem
-                    key={option}
-                    value={option}
-                    onSelect={() => {
-                      onChange(option);
-                      setOpen(false);
-                      setQuery("");
-                    }}
-                    className="flex items-center justify-between px-3 py-2.5 cursor-pointer rounded-lg mx-1 text-sm"
-                  >
-                    <span>{option}</span>
-                    {value === option && <Check className="h-4 w-4 text-primary shrink-0" />}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+          </div>
+
+          <div
+            className="overflow-y-auto overscroll-contain p-1"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            {filtered.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">{emptyText}</p>
+            ) : (
+              filtered.map((option) => (
+                <button
+                  key={option}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onChange(option);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground text-left",
+                    value === option && "bg-accent/50 font-medium"
+                  )}
+                >
+                  <span>{option}</span>
+                  {value === option && <Check className="h-4 w-4 text-primary shrink-0" />}
+                </button>
+              ))
             )}
-          </CommandList>
-        </Command>
+          </div>
+        </div>
       </PopoverContent>
     </Popover>
   );
