@@ -4,11 +4,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useCreateBusinessProfile } from "@workspace/api-client-react";
-import { INDIAN_STATES, generateInvoicePrefix } from "@/lib/utils";
+import { INDIAN_STATES, INDIAN_CITIES, generateInvoicePrefix } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/searchable-select";
 import { Card } from "@/components/ui/card";
 import { Building2, MapPin, Building, ChevronRight, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -143,16 +143,27 @@ export default function Onboarding() {
               <div className="grid sm:grid-cols-3 gap-5">
                 <div className="space-y-2">
                   <Label>City</Label>
-                  <Input {...form.register("city")} placeholder="Mumbai" className="h-12" />
+                  <SearchableSelect
+                    options={INDIAN_CITIES}
+                    value={form.watch("city") || ""}
+                    onChange={(v) => form.setValue("city", v)}
+                    placeholder="Select city"
+                    searchPlaceholder="Search city..."
+                    allowClear
+                    className="h-12"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>State</Label>
-                  <Select onValueChange={(v) => form.setValue("state", v)} defaultValue={form.getValues("state")}>
-                    <SelectTrigger className="h-12"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      {INDIAN_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    options={INDIAN_STATES}
+                    value={form.watch("state") || ""}
+                    onChange={(v) => form.setValue("state", v)}
+                    placeholder="Select state"
+                    searchPlaceholder="Search state..."
+                    allowClear
+                    className="h-12"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Pincode</Label>
