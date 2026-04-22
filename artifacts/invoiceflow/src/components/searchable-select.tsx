@@ -45,6 +45,7 @@ export function SearchableSelect({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          type="button"
           variant="outline"
           role="combobox"
           aria-expanded={open}
@@ -73,41 +74,42 @@ export function SearchableSelect({
       </PopoverTrigger>
 
       <PopoverContent
-        className="p-0 rounded-xl border shadow-lg bg-popover"
-        style={{ width: "var(--radix-popover-trigger-width)" }}
+        className="p-0 rounded-xl border shadow-lg bg-popover overflow-hidden"
+        style={{
+          width: "var(--radix-popover-trigger-width)",
+          maxHeight: "min(260px, calc(var(--radix-popover-content-available-height, 260px) - 8px))",
+        }}
         align="start"
         sideOffset={4}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <div className="flex flex-col" style={{ maxHeight: "260px" }}>
+        <div className="flex flex-col h-full">
           <div className="flex items-center gap-2 border-b px-3 py-2 shrink-0">
             <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
             <input
               ref={inputRef}
+              type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={searchPlaceholder}
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground min-w-0"
             />
             {query && (
-              <button onClick={() => setQuery("")} className="text-muted-foreground hover:text-foreground">
+              <button type="button" onClick={() => setQuery("")} className="text-muted-foreground hover:text-foreground shrink-0">
                 <X className="h-3 w-3" />
               </button>
             )}
           </div>
 
-          <div
-            className="overflow-y-auto overscroll-contain p-1"
-            style={{ WebkitOverflowScrolling: "touch" }}
-          >
+          <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 p-1">
             {filtered.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">{emptyText}</p>
             ) : (
               filtered.map((option) => (
                 <button
                   key={option}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
+                  type="button"
+                  onClick={() => {
                     onChange(option);
                     setOpen(false);
                   }}
