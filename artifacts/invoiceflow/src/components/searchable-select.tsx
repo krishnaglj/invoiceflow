@@ -84,7 +84,7 @@ export function SearchableSelect({
             onValueChange={setQuery}
             className="h-10"
           />
-          <CommandList className="max-h-56">
+          <CommandList className="max-h-56 overflow-y-auto">
             {filtered.length === 0 && (
               <CommandEmpty>
                 <p className="py-6 text-center text-sm text-muted-foreground">{emptyText}</p>
