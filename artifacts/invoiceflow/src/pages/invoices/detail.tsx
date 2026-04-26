@@ -110,6 +110,13 @@ export default function InvoiceDetail() {
 
   return (
     <div className="bg-muted/20 min-h-screen pb-20 print:min-h-0 print:pb-0 print:bg-white">
+      <style>{`
+        @media print {
+          @page { size: A4; margin: 10mm; }
+          html, body { height: auto !important; min-height: 0 !important; overflow: visible !important; }
+          .no-print { display: none !important; }
+        }
+      `}</style>
 
       {/* ── ACTION BAR (no print) ── */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b px-3 sm:px-4 py-3 flex items-center justify-between no-print shadow-sm gap-2">
