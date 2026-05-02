@@ -9,6 +9,8 @@ export const productsTable = pgTable("products", {
   description: text("description"),
   defaultRate: real("default_rate").notNull().default(0),
   unit: text("unit").notNull().default("piece"),
+  hsnCode: text("hsn_code"),
+  taxRate: real("tax_rate").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -17,6 +17,11 @@ import InvoicesList from "./pages/invoices";
 import InvoiceForm from "./pages/invoices/form";
 import InvoiceDetail from "./pages/invoices/detail";
 import Settings from "./pages/settings";
+import EstimatesList from "./pages/estimates";
+import EstimateForm from "./pages/estimates/form";
+import EstimateDetail from "./pages/estimates/detail";
+import Expenses from "./pages/expenses";
+import Reports from "./pages/reports";
 
 import { AuthGuard } from "./components/auth-guard";
 import { AppLayout } from "./components/layout";
@@ -53,14 +58,8 @@ function HomeRedirect() {
     }
   }, [isPending, session, setLocation]);
 
-  if (isPending) {
-    return null;
-  }
-
-  if (session?.user) {
-    return null;
-  }
-
+  if (isPending) return null;
+  if (session?.user) return null;
   return <Landing />;
 }
 
@@ -112,6 +111,12 @@ function Router() {
       <Route path="/invoices/new"><ProtectedRoute component={InvoiceForm} /></Route>
       <Route path="/invoices/:id/edit"><ProtectedRoute component={InvoiceForm} /></Route>
       <Route path="/invoices/:id"><ProtectedRoute component={InvoiceDetail} /></Route>
+      <Route path="/estimates"><ProtectedRoute component={EstimatesList} /></Route>
+      <Route path="/estimates/new"><ProtectedRoute component={EstimateForm} /></Route>
+      <Route path="/estimates/:id/edit"><ProtectedRoute component={EstimateForm} /></Route>
+      <Route path="/estimates/:id"><ProtectedRoute component={EstimateDetail} /></Route>
+      <Route path="/expenses"><ProtectedRoute component={Expenses} /></Route>
+      <Route path="/reports"><ProtectedRoute component={Reports} /></Route>
       <Route path="/settings"><ProtectedRoute component={Settings} /></Route>
 
       <Route component={NotFound} />

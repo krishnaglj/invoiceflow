@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation, useParams } from "wouter";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useGetInvoice, useCreateInvoice, useUpdateInvoice, useGetNextInvoiceNumber, useListCustomers, useGetBusinessProfile, useListProducts } from "@workspace/api-client-react";
+import {
+  useGetInvoice, useCreateInvoice, useUpdateInvoice,
+  useGetNextInvoiceNumber, useListCustomers, useGetBusinessProfile, useListProducts,
+} from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,12 +21,25 @@ import { useInvoiceCalculations } from "@/hooks/use-invoice-calc";
 import { formatCurrency } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 
+const INDIAN_STATES = [
+  "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat",
+  "Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra",
+  "Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim",
+  "Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal",
+  "Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry",
+];
+
+const GST_RATES = [0, 5, 12, 18, 28];
+
 const itemSchema = z.object({
   name: z.string().min(1, "Required"),
   description: z.string().optional(),
+  hsnCode: z.string().optional(),
   quantity: z.coerce.number().min(0.01),
   unit: z.string().default("pcs"),
   rate: z.coerce.number().min(0),
+  taxRate: z.coerce.number().default(0),
 });
 
 const invoiceSchema = z.object({
@@ -33,28 +49,25 @@ const invoiceSchema = z.object({
   customerPhone: z.string().optional(),
   customerAddress: z.string().optional(),
   customerGstin: z.string().optional(),
-  
   invoiceNumber: z.string().min(1),
   invoiceDate: z.string(),
   dueDate: z.string().optional(),
-  
+  placeOfSupply: z.string().optional(),
+  supplyType: z.enum(["intra", "inter"]).default("intra"),
   items: z.array(itemSchema).min(1, "Add at least one item"),
-  
   discountType: z.enum(["percent", "flat"]).default("flat"),
   discountValue: z.coerce.number().default(0),
   taxPercent: z.coerce.number().default(0),
-  
   notes: z.string().optional(),
   paymentTerms: z.string().optional(),
   showBankDetails: z.boolean().default(true),
-  status: z.enum(["draft", "sent", "paid", "overdue"]).default("draft"),
+  status: z.enum(["draft", "sent", "paid", "overdue", "partial"]).default("draft"),
 });
 
 export default function InvoiceForm() {
   const { id } = useParams();
   const isEditing = !!id;
   const invoiceId = parseInt(id || "0", 10);
-  
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -71,33 +84,34 @@ export default function InvoiceForm() {
   const form = useForm<z.infer<typeof invoiceSchema>>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
-      invoiceDate: new Date().toISOString().split('T')[0],
-      items: [{ name: "", quantity: 1, unit: "pcs", rate: 0 }],
+      invoiceDate: new Date().toISOString().split("T")[0],
+      items: [{ name: "", quantity: 1, unit: "pcs", rate: 0, taxRate: 0 }],
       discountType: "flat",
       discountValue: 0,
       taxPercent: 0,
       showBankDetails: true,
-      status: "draft"
-    }
+      supplyType: "intra",
+      status: "draft",
+    },
   });
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "items" });
-  
+
   const watchItems = form.watch("items");
   const watchDiscountType = form.watch("discountType");
   const watchDiscountValue = form.watch("discountValue");
   const watchTax = form.watch("taxPercent");
+  const watchSupplyType = form.watch("supplyType");
 
   const calc = useInvoiceCalculations(
-    watchItems.map(i => ({ quantity: i.quantity || 0, rate: i.rate || 0 })),
+    watchItems.map((i) => ({ quantity: i.quantity || 0, rate: i.rate || 0 })),
     watchDiscountType as any,
     watchDiscountValue || 0,
-    watchTax || 0
+    watchTax || 0,
   );
 
   useEffect(() => {
     if (isEditing && existingInvoice) {
-      // Strip null values → undefined so Zod optional() fields pass validation
       const sanitize = (v: unknown) => (v === null ? undefined : v);
       form.reset({
         customerId: existingInvoice.customerId ?? undefined,
@@ -107,21 +121,25 @@ export default function InvoiceForm() {
         customerAddress: sanitize(existingInvoice.customerAddress) as string | undefined,
         customerGstin: sanitize(existingInvoice.customerGstin) as string | undefined,
         invoiceNumber: existingInvoice.invoiceNumber,
-        invoiceDate: existingInvoice.invoiceDate.split('T')[0],
-        dueDate: existingInvoice.dueDate ? existingInvoice.dueDate.split('T')[0] : undefined,
+        invoiceDate: existingInvoice.invoiceDate.split("T")[0],
+        dueDate: existingInvoice.dueDate ? existingInvoice.dueDate.split("T")[0] : undefined,
+        placeOfSupply: sanitize(existingInvoice.placeOfSupply) as string | undefined,
+        supplyType: (existingInvoice.supplyType as "intra" | "inter") ?? "intra",
         discountType: (existingInvoice.discountType as "percent" | "flat") ?? "flat",
         discountValue: existingInvoice.discountValue ?? 0,
         taxPercent: existingInvoice.taxPercent ?? 0,
         notes: sanitize(existingInvoice.notes) as string | undefined,
         paymentTerms: sanitize(existingInvoice.paymentTerms) as string | undefined,
         showBankDetails: existingInvoice.showBankDetails ?? true,
-        status: (existingInvoice.status as "draft" | "sent" | "paid" | "overdue") ?? "draft",
-        items: (existingInvoice.items ?? []).map(item => ({
+        status: (existingInvoice.status as any) ?? "draft",
+        items: (existingInvoice.items ?? []).map((item) => ({
           name: item.name,
           description: sanitize(item.description) as string | undefined,
+          hsnCode: sanitize(item.hsnCode) as string | undefined,
           quantity: item.quantity,
           unit: item.unit,
           rate: item.rate,
+          taxRate: item.taxRate ?? 0,
         })),
       });
     } else if (!isEditing && nextNum && profile) {
@@ -130,10 +148,10 @@ export default function InvoiceForm() {
       form.setValue("notes", profile.defaultNotes || "");
       form.setValue("paymentTerms", profile.defaultPaymentTerms || "");
     }
-  }, [isEditing, existingInvoice, nextNum, profile, form]);
+  }, [isEditing, existingInvoice, nextNum, profile]);
 
   const handleCustomerSelect = (custId: string) => {
-    const c = customers?.find(c => c.id.toString() === custId);
+    const c = customers?.find((c) => c.id.toString() === custId);
     if (c) {
       form.setValue("customerId", c.id);
       form.setValue("customerName", c.name);
@@ -145,23 +163,26 @@ export default function InvoiceForm() {
   };
 
   const handleProductSelect = (index: number, prodId: string) => {
-    const p = products?.find(p => p.id.toString() === prodId);
+    const p = products?.find((p) => p.id.toString() === prodId);
     if (p) {
       form.setValue(`items.${index}.name`, p.name);
       form.setValue(`items.${index}.description`, p.description || "");
       form.setValue(`items.${index}.rate`, p.defaultRate);
       form.setValue(`items.${index}.unit`, p.unit);
+      if (p.hsnCode) form.setValue(`items.${index}.hsnCode`, p.hsnCode);
+      if (p.taxRate) form.setValue(`items.${index}.taxRate`, p.taxRate);
     }
   };
 
   const onSubmit = (data: z.infer<typeof invoiceSchema>, action: "draft" | "sent") => {
     const payload = {
       ...data,
-      status: action as "draft" | "sent",
-      items: data.items.map(item => ({
+      status: action as any,
+      items: data.items.map((item) => ({
         ...item,
-        amount: item.quantity * item.rate
-      }))
+        amount: item.quantity * item.rate,
+        taxRate: item.taxRate ?? 0,
+      })),
     };
 
     const mut = isEditing ? updateMut.mutate : createMut.mutate;
@@ -169,22 +190,23 @@ export default function InvoiceForm() {
 
     (mut as any)(args, {
       onSuccess: (res: any) => {
-        toast({ title: `Invoice ${isEditing ? 'updated' : 'created'}!` });
+        toast({ title: `Invoice ${isEditing ? "updated" : "created"}!` });
         queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
         setLocation(`/invoices/${res.id}`);
       },
       onError: (err: any) => {
         toast({ title: "Error", description: err.data?.error || "Failed to save", variant: "destructive" });
-      }
+      },
     });
   };
+
+  const cgst = calc.taxAmount / 2;
+  const sgst = calc.taxAmount / 2;
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full pb-32">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-display font-bold">{isEditing ? "Edit Invoice" : "New Invoice"}</h1>
-        </div>
+        <h1 className="text-3xl font-display font-bold">{isEditing ? "Edit Invoice" : "New Invoice"}</h1>
         <div className="flex items-center gap-3">
           <Button variant="outline" className="rounded-xl bg-card" onClick={form.handleSubmit((d) => onSubmit(d, "draft"))} disabled={createMut.isPending || updateMut.isPending}>
             <Save className="w-4 h-4 mr-2" /> Save Draft
@@ -196,11 +218,13 @@ export default function InvoiceForm() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Main Column */}
+        {/* ── MAIN COLUMN ── */}
         <div className="lg:col-span-2 space-y-6">
+          {/* CUSTOMER + INVOICE META */}
           <Card className="rounded-2xl border-border/50 shadow-sm">
             <CardContent className="p-6 space-y-6">
               <div className="grid sm:grid-cols-2 gap-6">
+                {/* Bill To */}
                 <div className="space-y-4 border p-4 rounded-xl bg-muted/20">
                   <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Bill To</h3>
                   <div className="space-y-3">
@@ -221,24 +245,40 @@ export default function InvoiceForm() {
                     )}
                     <Input {...form.register("customerName")} placeholder="Customer Name *" className="bg-background font-medium" />
                     <Input {...form.register("customerPhone")} placeholder="Phone" className="bg-background" />
-                    <Textarea {...form.register("customerAddress")} placeholder="Address" className="bg-background resize-none h-20" />
+                    <Input {...form.register("customerGstin")} placeholder="GSTIN (optional)" className="bg-background text-sm" />
+                    <Textarea {...form.register("customerAddress")} placeholder="Address" className="bg-background resize-none h-16" />
                   </div>
                 </div>
 
+                {/* Invoice Details */}
                 <div className="space-y-4 border p-4 rounded-xl bg-muted/20">
                   <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Invoice Details</h3>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
-                      <Label className="w-24 shrink-0 text-xs">Invoice No.</Label>
+                      <Label className="w-28 shrink-0 text-xs">Invoice No.</Label>
                       <Input {...form.register("invoiceNumber")} className="bg-background font-mono" />
                     </div>
                     <div className="flex items-center gap-3">
-                      <Label className="w-24 shrink-0 text-xs">Date</Label>
+                      <Label className="w-28 shrink-0 text-xs">Date</Label>
                       <Input type="date" {...form.register("invoiceDate")} className="bg-background" />
                     </div>
                     <div className="flex items-center gap-3">
-                      <Label className="w-24 shrink-0 text-xs">Due Date</Label>
+                      <Label className="w-28 shrink-0 text-xs">Due Date</Label>
                       <Input type="date" {...form.register("dueDate")} className="bg-background" />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Label className="w-28 shrink-0 text-xs">Place of Supply</Label>
+                      <select className="flex-1 border rounded-xl px-3 py-2 text-sm bg-background" {...form.register("placeOfSupply")}>
+                        <option value="">Select state</option>
+                        {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Label className="w-28 shrink-0 text-xs">Supply Type</Label>
+                      <select className="flex-1 border rounded-xl px-3 py-2 text-sm bg-background" {...form.register("supplyType")}>
+                        <option value="intra">Intra-state (CGST+SGST)</option>
+                        <option value="inter">Inter-state (IGST)</option>
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -246,99 +286,73 @@ export default function InvoiceForm() {
             </CardContent>
           </Card>
 
+          {/* LINE ITEMS */}
           <Card className="rounded-2xl border-border/50 shadow-sm">
             <CardContent className="p-0">
               <div className="divide-y">
                 {fields.map((field, index) => (
                   <div key={field.id} className="p-4 space-y-3 group">
-
-                    {/* Product picker */}
                     {products && products.length > 0 && (
                       <Select onValueChange={(v) => handleProductSelect(index, v)}>
                         <SelectTrigger className="h-9 text-xs bg-muted/30">
                           <SelectValue placeholder="Pick from product library..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {products.map(p => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}
+                          {products.map((p) => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     )}
 
-                    {/* Name + delete */}
                     <div className="flex gap-2 items-center">
-                      <Input
-                        {...form.register(`items.${index}.name`)}
-                        placeholder="Item name *"
-                        className="flex-1 font-medium"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        type="button"
-                        onClick={() => remove(index)}
-                        className="shrink-0 text-muted-foreground hover:text-destructive h-9 w-9"
-                      >
+                      <Input {...form.register(`items.${index}.name`)} placeholder="Item name *" className="flex-1 font-medium" />
+                      <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="shrink-0 text-muted-foreground hover:text-destructive h-9 w-9">
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
 
-                    {/* Description */}
-                    <Input
-                      {...form.register(`items.${index}.description`)}
-                      placeholder="Description (optional)"
-                      className="text-sm text-muted-foreground h-9"
-                    />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Description</Label>
+                        <Input {...form.register(`items.${index}.description`)} placeholder="Optional" className="text-sm h-9" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">HSN / SAC Code</Label>
+                        <Input {...form.register(`items.${index}.hsnCode`)} placeholder="e.g. 9954" className="h-9 text-sm" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">GST Rate</Label>
+                        <select className="w-full border rounded-xl px-3 h-9 text-sm bg-background" {...form.register(`items.${index}.taxRate`)}>
+                          {GST_RATES.map((r) => <option key={r} value={r}>{r}%</option>)}
+                        </select>
+                      </div>
+                    </div>
 
-                    {/* Qty / Unit / Rate / Amount */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Qty</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          inputMode="decimal"
-                          {...form.register(`items.${index}.quantity`)}
-                          className="h-9"
-                        />
+                        <Input type="number" step="0.01" inputMode="decimal" {...form.register(`items.${index}.quantity`)} className="h-9" />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Unit</Label>
-                        <Input
-                          {...form.register(`items.${index}.unit`)}
-                          placeholder="pcs"
-                          className="h-9 text-sm"
-                        />
+                        <Input {...form.register(`items.${index}.unit`)} placeholder="pcs" className="h-9 text-sm" />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Rate (₹)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          inputMode="decimal"
-                          {...form.register(`items.${index}.rate`)}
-                          className="h-9"
-                        />
+                        <Input type="number" step="0.01" inputMode="decimal" {...form.register(`items.${index}.rate`)} className="h-9" />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Amount</Label>
-                        <div className="h-9 flex items-center rounded-md border bg-muted/30 px-3 font-semibold text-primary text-sm">
+                        <div className="h-9 flex items-center rounded-xl border bg-muted/30 px-3 font-semibold text-primary text-sm">
                           {formatCurrency((watchItems[index]?.quantity || 0) * (watchItems[index]?.rate || 0))}
                         </div>
                       </div>
                     </div>
-
                   </div>
                 ))}
               </div>
 
               <div className="p-4 border-t bg-muted/10">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => append({ name: "", quantity: 1, unit: "pcs", rate: 0 })}
-                  className="rounded-xl border-dashed border-2 hover:border-primary"
-                >
+                <Button type="button" variant="outline" size="sm" onClick={() => append({ name: "", quantity: 1, unit: "pcs", rate: 0, taxRate: 0 })} className="rounded-xl border-dashed border-2 hover:border-primary">
                   <Plus className="w-4 h-4 mr-2" /> Add Line Item
                 </Button>
               </div>
@@ -346,18 +360,18 @@ export default function InvoiceForm() {
           </Card>
         </div>
 
-        {/* Sidebar Summary */}
+        {/* ── SIDEBAR SUMMARY ── */}
         <div className="space-y-6">
           <Card className="rounded-2xl border-border/50 shadow-sm sticky top-24">
             <CardContent className="p-6">
               <h3 className="font-display font-bold text-lg mb-4">Summary</h3>
-              
+
               <div className="space-y-4 text-sm">
                 <div className="flex justify-between items-center text-muted-foreground">
                   <span>Subtotal</span>
                   <span className="font-medium">{formatCurrency(calc.subtotal)}</span>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-2 items-center">
                   <Select onValueChange={(v) => form.setValue("discountType", v as any)} value={watchDiscountType}>
                     <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
@@ -368,11 +382,11 @@ export default function InvoiceForm() {
                   </Select>
                   <Input type="number" {...form.register("discountValue")} className="h-9 text-right" />
                 </div>
-                
+
                 {calc.discountAmount > 0 && (
                   <div className="flex justify-between items-center text-emerald-600 font-medium">
                     <span>Discount</span>
-                    <span>-{formatCurrency(calc.discountAmount)}</span>
+                    <span>−{formatCurrency(calc.discountAmount)}</span>
                   </div>
                 )}
 
@@ -382,10 +396,23 @@ export default function InvoiceForm() {
                 </div>
 
                 {calc.taxAmount > 0 && (
-                  <div className="flex justify-between items-center text-muted-foreground">
-                    <span>Tax</span>
-                    <span>{formatCurrency(calc.taxAmount)}</span>
-                  </div>
+                  watchSupplyType === "inter" ? (
+                    <div className="flex justify-between items-center text-muted-foreground">
+                      <span>IGST ({watchTax}%)</span>
+                      <span>{formatCurrency(calc.taxAmount)}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-center text-muted-foreground">
+                        <span>CGST ({(watchTax || 0) / 2}%)</span>
+                        <span>{formatCurrency(cgst)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-muted-foreground">
+                        <span>SGST ({(watchTax || 0) / 2}%)</span>
+                        <span>{formatCurrency(sgst)}</span>
+                      </div>
+                    </>
+                  )
                 )}
 
                 <div className="pt-4 border-t flex justify-between items-center">

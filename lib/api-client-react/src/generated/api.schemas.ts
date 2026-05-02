@@ -41,6 +41,8 @@ export interface BusinessProfile {
   ifscCode?: string | null;
   /** @nullable */
   accountHolder?: string | null;
+  /** @nullable */
+  upiId?: string | null;
   invoicePrefix: string;
   invoiceStartNumber: number;
   defaultTaxPercent: number;
@@ -67,6 +69,7 @@ export interface CreateBusinessProfileBody {
   accountNumber?: string;
   ifscCode?: string;
   accountHolder?: string;
+  upiId?: string;
   invoicePrefix?: string;
   defaultTaxPercent?: number;
   defaultNotes?: string;
@@ -89,7 +92,9 @@ export interface UpdateBusinessProfileBody {
   accountNumber?: string;
   ifscCode?: string;
   accountHolder?: string;
+  upiId?: string;
   invoicePrefix?: string;
+  invoiceStartNumber?: number;
   defaultTaxPercent?: number;
   defaultNotes?: string;
   defaultPaymentTerms?: string;
@@ -122,6 +127,7 @@ export const InvoiceListItemStatus = {
   sent: "sent",
   paid: "paid",
   overdue: "overdue",
+  partial: "partial",
 } as const;
 
 export interface InvoiceListItem {
@@ -136,6 +142,7 @@ export interface InvoiceListItem {
   dueDate?: string | null;
   status: InvoiceListItemStatus;
   total: number;
+  paidAmount: number;
   createdAt: string;
 }
 
@@ -192,6 +199,9 @@ export interface Product {
   description?: string | null;
   defaultRate: number;
   unit: string;
+  /** @nullable */
+  hsnCode?: string | null;
+  taxRate: number;
   createdAt: string;
 }
 
@@ -200,6 +210,8 @@ export interface CreateProductBody {
   description?: string;
   defaultRate: number;
   unit: string;
+  hsnCode?: string;
+  taxRate?: number;
 }
 
 export interface UpdateProductBody {
@@ -207,6 +219,8 @@ export interface UpdateProductBody {
   description?: string;
   defaultRate?: number;
   unit?: string;
+  hsnCode?: string;
+  taxRate?: number;
 }
 
 export interface InvoiceItem {
@@ -217,9 +231,12 @@ export interface InvoiceItem {
   name: string;
   /** @nullable */
   description?: string | null;
+  /** @nullable */
+  hsnCode?: string | null;
   quantity: number;
   unit: string;
   rate: number;
+  taxRate: number;
   amount: number;
 }
 
@@ -227,9 +244,11 @@ export interface CreateInvoiceItemBody {
   productId?: number;
   name: string;
   description?: string;
+  hsnCode?: string;
   quantity: number;
   unit: string;
   rate: number;
+  taxRate?: number;
   amount: number;
 }
 
@@ -240,6 +259,7 @@ export const InvoiceStatus = {
   sent: "sent",
   paid: "paid",
   overdue: "overdue",
+  partial: "partial",
 } as const;
 
 export type InvoiceDiscountType =
@@ -249,6 +269,20 @@ export const InvoiceDiscountType = {
   percent: "percent",
   flat: "flat",
 } as const;
+
+export type InvoiceSupplyType = "intra" | "inter";
+
+export interface InvoicePayment {
+  id: number;
+  amount: number;
+  date: string;
+  method: string;
+  /** @nullable */
+  reference?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
 
 export interface Invoice {
   id: number;
@@ -273,18 +307,23 @@ export interface Invoice {
   /** @nullable */
   dueDate?: string | null;
   status: InvoiceStatus;
+  /** @nullable */
+  placeOfSupply?: string | null;
+  supplyType: InvoiceSupplyType;
   subtotal: number;
   discountType: InvoiceDiscountType;
   discountValue: number;
   taxPercent: number;
   taxAmount: number;
   total: number;
+  paidAmount: number;
   /** @nullable */
   notes?: string | null;
   /** @nullable */
   paymentTerms?: string | null;
   showBankDetails: boolean;
   items: InvoiceItem[];
+  payments: InvoicePayment[];
   createdAt: string;
   updatedAt: string;
 }
@@ -297,6 +336,7 @@ export const CreateInvoiceBodyStatus = {
   sent: "sent",
   paid: "paid",
   overdue: "overdue",
+  partial: "partial",
 } as const;
 
 export type CreateInvoiceBodyDiscountType =
@@ -320,6 +360,8 @@ export interface CreateInvoiceBody {
   invoiceDate: string;
   dueDate?: string;
   status: CreateInvoiceBodyStatus;
+  placeOfSupply?: string;
+  supplyType?: InvoiceSupplyType;
   discountType?: CreateInvoiceBodyDiscountType;
   discountValue?: number;
   taxPercent?: number;
@@ -337,6 +379,7 @@ export const UpdateInvoiceBodyStatus = {
   sent: "sent",
   paid: "paid",
   overdue: "overdue",
+  partial: "partial",
 } as const;
 
 export type UpdateInvoiceBodyDiscountType =
@@ -360,6 +403,8 @@ export interface UpdateInvoiceBody {
   invoiceDate?: string;
   dueDate?: string;
   status?: UpdateInvoiceBodyStatus;
+  placeOfSupply?: string;
+  supplyType?: InvoiceSupplyType;
   discountType?: UpdateInvoiceBodyDiscountType;
   discountValue?: number;
   taxPercent?: number;
@@ -375,6 +420,278 @@ export interface NextInvoiceNumber {
   number: number;
 }
 
+export interface NextEstimateNumber {
+  estimateNumber: string;
+  prefix: string;
+  number: number;
+}
+
+// ─── Payments ─────────────────────────────────────────────────────────────────
+
+export type PaymentMethod = "cash" | "upi" | "bank_transfer" | "cheque" | "card";
+
+export interface Payment {
+  id: number;
+  invoiceId: number;
+  amount: number;
+  date: string;
+  method: string;
+  /** @nullable */
+  reference?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface CreatePaymentBody {
+  invoiceId: number;
+  amount: number;
+  date: string;
+  method: PaymentMethod;
+  reference?: string;
+  notes?: string;
+}
+
+// ─── Estimates ────────────────────────────────────────────────────────────────
+
+export type EstimateStatus = "draft" | "sent" | "accepted" | "rejected" | "converted";
+
+export interface EstimateItem {
+  id: number;
+  estimateId: number;
+  /** @nullable */
+  productId?: number | null;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  hsnCode?: string | null;
+  quantity: number;
+  unit: string;
+  rate: number;
+  taxRate: number;
+  amount: number;
+}
+
+export interface EstimateListItem {
+  id: number;
+  /** @nullable */
+  customerId?: number | null;
+  /** @nullable */
+  customerName?: string | null;
+  estimateNumber: string;
+  estimateDate: string;
+  /** @nullable */
+  validUntil?: string | null;
+  status: EstimateStatus;
+  total: number;
+  /** @nullable */
+  convertedToInvoiceId?: number | null;
+  createdAt: string;
+}
+
+export interface Estimate {
+  id: number;
+  /** @nullable */
+  customerId?: number | null;
+  /** @nullable */
+  customerName?: string | null;
+  /** @nullable */
+  customerEmail?: string | null;
+  /** @nullable */
+  customerPhone?: string | null;
+  /** @nullable */
+  customerAddress?: string | null;
+  /** @nullable */
+  customerCity?: string | null;
+  /** @nullable */
+  customerState?: string | null;
+  /** @nullable */
+  customerGstin?: string | null;
+  estimateNumber: string;
+  estimateDate: string;
+  /** @nullable */
+  validUntil?: string | null;
+  status: EstimateStatus;
+  /** @nullable */
+  placeOfSupply?: string | null;
+  supplyType: InvoiceSupplyType;
+  subtotal: number;
+  discountType: InvoiceDiscountType;
+  discountValue: number;
+  taxPercent: number;
+  taxAmount: number;
+  total: number;
+  /** @nullable */
+  notes?: string | null;
+  showBankDetails: boolean;
+  /** @nullable */
+  convertedToInvoiceId?: number | null;
+  items: EstimateItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEstimateBody {
+  customerId?: number;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  customerCity?: string;
+  customerState?: string;
+  customerGstin?: string;
+  estimateNumber: string;
+  estimateDate: string;
+  validUntil?: string;
+  status: EstimateStatus;
+  placeOfSupply?: string;
+  supplyType?: InvoiceSupplyType;
+  discountType?: InvoiceDiscountType;
+  discountValue?: number;
+  taxPercent?: number;
+  notes?: string;
+  showBankDetails?: boolean;
+  items: CreateInvoiceItemBody[];
+}
+
+export interface UpdateEstimateBody {
+  customerId?: number;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  customerCity?: string;
+  customerState?: string;
+  customerGstin?: string;
+  estimateNumber?: string;
+  estimateDate?: string;
+  validUntil?: string;
+  status?: EstimateStatus;
+  placeOfSupply?: string;
+  supplyType?: InvoiceSupplyType;
+  discountType?: InvoiceDiscountType;
+  discountValue?: number;
+  taxPercent?: number;
+  notes?: string;
+  showBankDetails?: boolean;
+  items?: CreateInvoiceItemBody[];
+}
+
+export interface ConvertEstimateResponse {
+  invoiceId: number;
+  invoiceNumber: string;
+}
+
+// ─── Expenses ─────────────────────────────────────────────────────────────────
+
+export interface Expense {
+  id: number;
+  date: string;
+  category: string;
+  amount: number;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  vendor?: string | null;
+  paymentMethod: string;
+  /** @nullable */
+  reference?: string | null;
+  /** @nullable */
+  receiptUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateExpenseBody {
+  date: string;
+  category: string;
+  amount: number;
+  description?: string;
+  vendor?: string;
+  paymentMethod?: PaymentMethod;
+  reference?: string;
+  receiptUrl?: string;
+}
+
+export interface UpdateExpenseBody {
+  date?: string;
+  category?: string;
+  amount?: number;
+  description?: string;
+  vendor?: string;
+  paymentMethod?: PaymentMethod;
+  reference?: string;
+}
+
+export type ListExpensesParams = {
+  category?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+};
+
+export type ListEstimatesParams = {
+  status?: EstimateStatus;
+  search?: string;
+};
+
+// ─── Reports ─────────────────────────────────────────────────────────────────
+
+export interface GstReportSlab {
+  taxRate: number;
+  taxableAmount: number;
+  cgst: number;
+  sgst: number;
+  igst: number;
+  totalTax: number;
+  invoiceCount: number;
+}
+
+export interface GstReport {
+  month: string;
+  year: number;
+  totalTaxable: number;
+  totalCgst: number;
+  totalSgst: number;
+  totalIgst: number;
+  totalTax: number;
+  totalRevenue: number;
+  slabs: GstReportSlab[];
+}
+
+export interface ProfitLossMonth {
+  month: string;
+  revenue: number;
+  expenses: number;
+  profit: number;
+}
+
+export interface ExpenseByCategory {
+  category: string;
+  amount: number;
+}
+
+export interface ProfitLoss {
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+  revenueByMonth: ProfitLossMonth[];
+  expensesByCategory: ExpenseByCategory[];
+}
+
+export type GetGstReportParams = {
+  month?: string;
+  year?: number;
+};
+
+export type GetProfitLossParams = {
+  startDate?: string;
+  endDate?: string;
+};
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+
 export interface DashboardStats {
   totalRevenue: number;
   paidInvoices: number;
@@ -382,6 +699,8 @@ export interface DashboardStats {
   overdueCount: number;
   totalInvoices: number;
   totalCustomers: number;
+  totalExpenses: number;
+  netProfit: number;
 }
 
 export interface MonthlyRevenue {
@@ -420,4 +739,5 @@ export const ListInvoicesStatus = {
   sent: "sent",
   paid: "paid",
   overdue: "overdue",
+  partial: "partial",
 } as const;

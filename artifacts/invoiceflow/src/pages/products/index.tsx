@@ -6,18 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Search, Trash2, PackageSearch } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+
+const GST_RATES = [0, 5, 12, 18, 28];
 
 const productSchema = z.object({
   name: z.string().min(2, "Required"),
   description: z.string().optional(),
   defaultRate: z.coerce.number().min(0),
   unit: z.string().default("pcs"),
+  hsnCode: z.string().optional(),
+  taxRate: z.coerce.number().default(0),
 });
 
 export default function Products() {
@@ -31,7 +37,7 @@ export default function Products() {
 
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
-    defaultValues: { unit: "pcs", defaultRate: 0 }
+    defaultValues: { unit: "pcs", defaultRate: 0, taxRate: 0 },
   });
 
   const onSubmit = (data: z.infer<typeof productSchema>) => {
@@ -40,15 +46,15 @@ export default function Products() {
         toast({ title: "Product added" });
         queryClient.invalidateQueries({ queryKey: ["/api/products"] });
         setIsOpen(false);
-        form.reset();
-      }
+        form.reset({ unit: "pcs", defaultRate: 0, taxRate: 0 });
+      },
     });
   };
 
   const handleDelete = (id: number) => {
-    if(confirm("Delete this item from library?")) {
+    if (confirm("Delete this item from library?")) {
       deleteMut.mutate({ id }, {
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/products"] })
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/products"] }),
       });
     }
   };
@@ -60,7 +66,7 @@ export default function Products() {
           <h1 className="text-3xl font-display font-bold">Products & Services</h1>
           <p className="text-muted-foreground mt-1">Items you frequently invoice for.</p>
         </div>
-        
+
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button className="rounded-xl shadow-lg shadow-primary/20 hover-elevate">
@@ -90,6 +96,31 @@ export default function Products() {
                   <Input {...form.register("unit")} placeholder="pcs, hr, kg" />
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>HSN / SAC Code</Label>
+                  <Input {...form.register("hsnCode")} placeholder="e.g. 9954" />
+                </div>
+                <div className="space-y-2">
+                  <Label>GST Rate (%)</Label>
+                  <Controller
+                    control={form.control}
+                    name="taxRate"
+                    render={({ field }) => (
+                      <Select value={String(field.value)} onValueChange={(v) => field.onChange(parseFloat(v))}>
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {GST_RATES.map((r) => (
+                            <SelectItem key={r} value={String(r)}>{r}%</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              </div>
               <Button type="submit" className="w-full mt-4" disabled={createMut.isPending}>Save Item</Button>
             </form>
           </DialogContent>
@@ -98,8 +129,8 @@ export default function Products() {
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input 
-          placeholder="Search items..." 
+        <Input
+          placeholder="Search items..."
           className="pl-9 h-11 rounded-xl bg-card border-border/50"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -112,14 +143,32 @@ export default function Products() {
             <CardContent className="p-5 flex flex-col h-full">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-bold text-lg">{p.name}</h3>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity" onClick={() => handleDelete(p.id)}>
+                <Button
+                  variant="ghost" size="icon"
+                  className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
+                  onClick={() => handleDelete(p.id)}
+                >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
-              {p.description && <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{p.description}</p>}
-              <div className="mt-auto pt-4 flex items-end justify-between border-t border-border/50">
-                <span className="text-xs font-medium text-muted-foreground uppercase bg-muted/50 px-2 py-1 rounded-md">{p.unit}</span>
-                <span className="text-xl font-display font-bold text-primary">{formatCurrency(p.defaultRate)}</span>
+              {p.description && (
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{p.description}</p>
+              )}
+              <div className="mt-auto pt-3 space-y-2 border-t border-border/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-muted-foreground uppercase bg-muted/50 px-2 py-1 rounded-md">{p.unit}</span>
+                    {p.hsnCode && (
+                      <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">HSN: {p.hsnCode}</span>
+                    )}
+                  </div>
+                  <span className="text-xl font-display font-bold text-primary">{formatCurrency(p.defaultRate)}</span>
+                </div>
+                {p.taxRate > 0 && (
+                  <div className="flex justify-end">
+                    <Badge variant="outline" className="text-xs text-muted-foreground border-muted-foreground/30">GST {p.taxRate}%</Badge>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

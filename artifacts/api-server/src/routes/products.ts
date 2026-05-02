@@ -45,7 +45,7 @@ router.post("/products", requireAuth, async (req, res): Promise<void> => {
   }
   const [product] = await db
     .insert(productsTable)
-    .values({ ...parsed.data, userId: req.userId })
+    .values({ ...parsed.data, userId: req.userId, taxRate: parsed.data.taxRate ?? 0 })
     .returning();
   res.status(201).json(ListProductsResponseItem.parse(product));
 });

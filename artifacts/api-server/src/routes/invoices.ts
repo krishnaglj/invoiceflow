@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, sql, and } from "drizzle-orm";
-import { db, invoicesTable, invoiceItemsTable, businessProfilesTable } from "@workspace/db";
+import { db, invoicesTable, invoiceItemsTable, businessProfilesTable, paymentsTable } from "@workspace/db";
 import {
   CreateInvoiceBody,
   UpdateInvoiceBody,
@@ -50,7 +50,44 @@ async function getInvoiceWithItems(id: number, userId: string) {
     .from(invoiceItemsTable)
     .where(eq(invoiceItemsTable.invoiceId, id));
 
-  return { ...invoice, items };
+  const payments = await db
+    .select()
+    .from(paymentsTable)
+    .where(and(eq(paymentsTable.invoiceId, id), eq(paymentsTable.userId, userId)))
+    .orderBy(desc(paymentsTable.createdAt));
+
+  return { ...invoice, items, payments };
+}
+
+async function recalcPaidAmount(invoiceId: number, userId: string) {
+  const allPayments = await db
+    .select({ amount: paymentsTable.amount })
+    .from(paymentsTable)
+    .where(and(eq(paymentsTable.invoiceId, invoiceId), eq(paymentsTable.userId, userId)));
+
+  const paidAmount = allPayments.reduce((sum, p) => sum + p.amount, 0);
+
+  const [inv] = await db
+    .select({ total: invoicesTable.total })
+    .from(invoicesTable)
+    .where(eq(invoicesTable.id, invoiceId));
+
+  const total = inv?.total ?? 0;
+  let newStatus: string;
+  if (paidAmount <= 0) {
+    newStatus = "sent";
+  } else if (paidAmount >= total) {
+    newStatus = "paid";
+  } else {
+    newStatus = "partial";
+  }
+
+  await db
+    .update(invoicesTable)
+    .set({ paidAmount, status: newStatus })
+    .where(eq(invoicesTable.id, invoiceId));
+
+  return paidAmount;
 }
 
 router.get("/invoices/next-number", requireAuth, async (req, res): Promise<void> => {
@@ -89,6 +126,7 @@ router.get("/invoices", requireAuth, async (req, res): Promise<void> => {
       dueDate: invoicesTable.dueDate,
       status: invoicesTable.status,
       total: invoicesTable.total,
+      paidAmount: invoicesTable.paidAmount,
       createdAt: invoicesTable.createdAt,
     })
     .from(invoicesTable)
@@ -139,6 +177,8 @@ router.post("/invoices", requireAuth, async (req, res): Promise<void> => {
       discountValue: invoiceData.discountValue ?? 0,
       taxPercent: invoiceData.taxPercent ?? 0,
       showBankDetails: invoiceData.showBankDetails ?? false,
+      supplyType: invoiceData.supplyType ?? "intra",
+      paidAmount: 0,
     })
     .returning();
 
@@ -149,9 +189,11 @@ router.post("/invoices", requireAuth, async (req, res): Promise<void> => {
         productId: item.productId ?? null,
         name: item.name,
         description: item.description ?? null,
+        hsnCode: item.hsnCode ?? null,
         quantity: item.quantity,
         unit: item.unit,
         rate: item.rate,
+        taxRate: item.taxRate ?? 0,
         amount: item.quantity * item.rate,
       }))
     );
@@ -225,9 +267,11 @@ router.patch("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
           productId: item.productId ?? null,
           name: item.name,
           description: item.description ?? null,
+          hsnCode: item.hsnCode ?? null,
           quantity: item.quantity,
           unit: item.unit,
           rate: item.rate,
+          taxRate: item.taxRate ?? 0,
           amount: item.quantity * item.rate,
         }))
       );
@@ -250,16 +294,20 @@ router.patch("/invoices/:id/mark-paid", requireAuth, async (req, res): Promise<v
     return;
   }
 
-  const [invoice] = await db
-    .update(invoicesTable)
-    .set({ status: "paid" })
-    .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.userId)))
-    .returning();
+  const [inv] = await db
+    .select()
+    .from(invoicesTable)
+    .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.userId)));
 
-  if (!invoice) {
+  if (!inv) {
     res.status(404).json({ error: "Invoice not found" });
     return;
   }
+
+  await db
+    .update(invoicesTable)
+    .set({ status: "paid", paidAmount: inv.total })
+    .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.userId)));
 
   const result = await getInvoiceWithItems(params.data.id, req.userId);
   res.json(MarkInvoicePaidResponse.parse(result));
@@ -276,6 +324,10 @@ router.delete("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
     .delete(invoiceItemsTable)
     .where(eq(invoiceItemsTable.invoiceId, params.data.id));
 
+  await db
+    .delete(paymentsTable)
+    .where(eq(paymentsTable.invoiceId, params.data.id));
+
   const [invoice] = await db
     .delete(invoicesTable)
     .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.userId)))
@@ -286,6 +338,64 @@ router.delete("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
+  res.sendStatus(204);
+});
+
+// ─── Payments for an invoice ──────────────────────────────────────────────────
+
+router.get("/invoices/:invoiceId/payments", requireAuth, async (req, res): Promise<void> => {
+  const invoiceId = parseInt(req.params.invoiceId, 10);
+  const payments = await db
+    .select()
+    .from(paymentsTable)
+    .where(and(eq(paymentsTable.invoiceId, invoiceId), eq(paymentsTable.userId, req.userId)))
+    .orderBy(desc(paymentsTable.createdAt));
+  res.json(payments);
+});
+
+router.post("/invoices/:invoiceId/payments", requireAuth, async (req, res): Promise<void> => {
+  const invoiceId = parseInt(req.params.invoiceId, 10);
+
+  const [inv] = await db
+    .select()
+    .from(invoicesTable)
+    .where(and(eq(invoicesTable.id, invoiceId), eq(invoicesTable.userId, req.userId)));
+
+  if (!inv) {
+    res.status(404).json({ error: "Invoice not found" });
+    return;
+  }
+
+  const { amount, date, method, reference, notes } = req.body;
+  if (!amount || !date || !method) {
+    res.status(400).json({ error: "amount, date, method are required" });
+    return;
+  }
+
+  await db.insert(paymentsTable).values({
+    invoiceId,
+    userId: req.userId,
+    amount: parseFloat(amount),
+    date,
+    method,
+    reference: reference ?? null,
+    notes: notes ?? null,
+  });
+
+  await recalcPaidAmount(invoiceId, req.userId);
+  const result = await getInvoiceWithItems(invoiceId, req.userId);
+  res.status(201).json(GetInvoiceResponse.parse(result));
+});
+
+router.delete("/invoices/:invoiceId/payments/:paymentId", requireAuth, async (req, res): Promise<void> => {
+  const invoiceId = parseInt(req.params.invoiceId, 10);
+  const paymentId = parseInt(req.params.paymentId, 10);
+
+  await db
+    .delete(paymentsTable)
+    .where(and(eq(paymentsTable.id, paymentId), eq(paymentsTable.userId, req.userId)));
+
+  await recalcPaidAmount(invoiceId, req.userId);
   res.sendStatus(204);
 });
 

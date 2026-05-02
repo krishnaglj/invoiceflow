@@ -18,26 +18,43 @@ import type {
 
 import type {
   BusinessProfile,
+  ConvertEstimateResponse,
   CreateBusinessProfileBody,
   CreateCustomerBody,
+  CreateEstimateBody,
+  CreateExpenseBody,
   CreateInvoiceBody,
+  CreatePaymentBody,
   CreateProductBody,
   Customer,
   CustomerDetail,
   DashboardStats,
+  Estimate,
+  EstimateListItem,
   ErrorResponse,
+  Expense,
+  GstReport,
+  GetGstReportParams,
+  GetProfitLossParams,
   HealthStatus,
   Invoice,
   InvoiceListItem,
   ListCustomersParams,
+  ListEstimatesParams,
+  ListExpensesParams,
   ListInvoicesParams,
   ListProductsParams,
   MonthlyRevenue,
+  NextEstimateNumber,
   NextInvoiceNumber,
+  Payment,
+  ProfitLoss,
   Product,
   TopCustomer,
   UpdateBusinessProfileBody,
   UpdateCustomerBody,
+  UpdateEstimateBody,
+  UpdateExpenseBody,
   UpdateInvoiceBody,
   UpdateProductBody,
 } from "./api.schemas";
@@ -1985,4 +2002,220 @@ export function useGetTopCustomers<
   };
 
   return { ...query, queryKey: queryOptions.queryKey };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ESTIMATES
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const getGetNextEstimateNumberUrl = () => `/api/estimates/next-number`;
+export const getNextEstimateNumber = async (options?: RequestInit): Promise<NextEstimateNumber> =>
+  customFetch<NextEstimateNumber>(getGetNextEstimateNumberUrl(), { ...options, method: "GET" });
+export const getGetNextEstimateNumberQueryKey = () => [`/api/estimates/next-number`] as const;
+export function useGetNextEstimateNumber<TData = Awaited<ReturnType<typeof getNextEstimateNumber>>, TError = ErrorType<unknown>>(
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getNextEstimateNumber>>, TError, TData>; request?: SecondParameter<typeof customFetch> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetNextEstimateNumberQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getNextEstimateNumber>>> = ({ signal }) => getNextEstimateNumber({ signal, ...requestOptions });
+  const query = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey };
+}
+
+export const getListEstimatesUrl = (params?: ListEstimatesParams) => {
+  const searchParams = new URLSearchParams();
+  if (params?.status) searchParams.set("status", params.status);
+  if (params?.search) searchParams.set("search", params.search);
+  const qs = searchParams.toString();
+  return `/api/estimates${qs ? `?${qs}` : ""}`;
+};
+export const listEstimates = async (params?: ListEstimatesParams, options?: RequestInit): Promise<EstimateListItem[]> =>
+  customFetch<EstimateListItem[]>(getListEstimatesUrl(params), { ...options, method: "GET" });
+export const getListEstimatesQueryKey = (params?: ListEstimatesParams) => [`/api/estimates`, ...(params ? [params] : [])] as const;
+export function useListEstimates<TData = Awaited<ReturnType<typeof listEstimates>>, TError = ErrorType<unknown>>(
+  params?: ListEstimatesParams,
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof listEstimates>>, TError, TData>; request?: SecondParameter<typeof customFetch> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getListEstimatesQueryKey(params);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listEstimates>>> = ({ signal }) => listEstimates(params, { signal, ...requestOptions });
+  const query = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey };
+}
+
+export const getGetEstimateUrl = (id: number) => `/api/estimates/${id}`;
+export const getEstimate = async (id: number, options?: RequestInit): Promise<Estimate> =>
+  customFetch<Estimate>(getGetEstimateUrl(id), { ...options, method: "GET" });
+export const getGetEstimateQueryKey = (id: number) => [`/api/estimates/${id}`] as const;
+export function useGetEstimate<TData = Awaited<ReturnType<typeof getEstimate>>, TError = ErrorType<unknown>>(
+  id: number,
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getEstimate>>, TError, TData>; request?: SecondParameter<typeof customFetch> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetEstimateQueryKey(id);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getEstimate>>> = ({ signal }) => getEstimate(id, { signal, ...requestOptions });
+  const query = useQuery({ queryKey, queryFn, enabled: !!id, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey };
+}
+
+export const createEstimate = async (data: CreateEstimateBody, options?: RequestInit): Promise<Estimate> =>
+  customFetch<Estimate>("/api/estimates", { ...options, method: "POST", body: JSON.stringify(data) });
+export const getCreateEstimateMutationOptions = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof createEstimate>>, TError, { data: CreateEstimateBody }, TContext>; request?: SecondParameter<typeof customFetch> }
+) => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEstimate>>, { data: CreateEstimateBody }> = ({ data }) => createEstimate(data, requestOptions);
+  return { mutationFn, ...mutationOptions };
+};
+export const useCreateEstimate = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof createEstimate>>, TError, { data: CreateEstimateBody }, TContext>; request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof createEstimate>>, TError, { data: CreateEstimateBody }, TContext> =>
+  useMutation(getCreateEstimateMutationOptions(options));
+
+export const updateEstimate = async (id: number, data: UpdateEstimateBody, options?: RequestInit): Promise<Estimate> =>
+  customFetch<Estimate>(`/api/estimates/${id}`, { ...options, method: "PATCH", body: JSON.stringify(data) });
+export const useUpdateEstimate = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateEstimate>>, TError, { id: number; data: UpdateEstimateBody }, TContext>; request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof updateEstimate>>, TError, { id: number; data: UpdateEstimateBody }, TContext> =>
+  useMutation({ mutationFn: ({ id, data }) => updateEstimate(id, data), ...options?.mutation });
+
+export const deleteEstimate = async (id: number, options?: RequestInit): Promise<void> =>
+  customFetch<void>(`/api/estimates/${id}`, { ...options, method: "DELETE" });
+export const useDeleteEstimate = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof deleteEstimate>>, TError, { id: number }, TContext>; request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof deleteEstimate>>, TError, { id: number }, TContext> =>
+  useMutation({ mutationFn: ({ id }) => deleteEstimate(id), ...options?.mutation });
+
+export const convertEstimate = async (id: number, options?: RequestInit): Promise<ConvertEstimateResponse> =>
+  customFetch<ConvertEstimateResponse>(`/api/estimates/${id}/convert`, { ...options, method: "POST" });
+export const useConvertEstimate = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof convertEstimate>>, TError, { id: number }, TContext>; request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof convertEstimate>>, TError, { id: number }, TContext> =>
+  useMutation({ mutationFn: ({ id }) => convertEstimate(id), ...options?.mutation });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPENSES
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const getListExpensesUrl = (params?: ListExpensesParams) => {
+  const searchParams = new URLSearchParams();
+  if (params?.category) searchParams.set("category", params.category);
+  if (params?.startDate) searchParams.set("startDate", params.startDate);
+  if (params?.endDate) searchParams.set("endDate", params.endDate);
+  if (params?.search) searchParams.set("search", params.search);
+  const qs = searchParams.toString();
+  return `/api/expenses${qs ? `?${qs}` : ""}`;
+};
+export const listExpenses = async (params?: ListExpensesParams, options?: RequestInit): Promise<Expense[]> =>
+  customFetch<Expense[]>(getListExpensesUrl(params), { ...options, method: "GET" });
+export const getListExpensesQueryKey = (params?: ListExpensesParams) => [`/api/expenses`, ...(params ? [params] : [])] as const;
+export function useListExpenses<TData = Awaited<ReturnType<typeof listExpenses>>, TError = ErrorType<unknown>>(
+  params?: ListExpensesParams,
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof listExpenses>>, TError, TData>; request?: SecondParameter<typeof customFetch> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getListExpensesQueryKey(params);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listExpenses>>> = ({ signal }) => listExpenses(params, { signal, ...requestOptions });
+  const query = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey };
+}
+
+export const createExpense = async (data: CreateExpenseBody, options?: RequestInit): Promise<Expense> =>
+  customFetch<Expense>("/api/expenses", { ...options, method: "POST", body: JSON.stringify(data) });
+export const useCreateExpense = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof createExpense>>, TError, { data: CreateExpenseBody }, TContext>; request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof createExpense>>, TError, { data: CreateExpenseBody }, TContext> =>
+  useMutation({ mutationFn: ({ data }) => createExpense(data), ...options?.mutation });
+
+export const deleteExpense = async (id: number, options?: RequestInit): Promise<void> =>
+  customFetch<void>(`/api/expenses/${id}`, { ...options, method: "DELETE" });
+export const useDeleteExpense = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof deleteExpense>>, TError, { id: number }, TContext>; request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof deleteExpense>>, TError, { id: number }, TContext> =>
+  useMutation({ mutationFn: ({ id }) => deleteExpense(id), ...options?.mutation });
+
+export const updateExpense = async (id: number, data: UpdateExpenseBody, options?: RequestInit): Promise<Expense> =>
+  customFetch<Expense>(`/api/expenses/${id}`, { ...options, method: "PATCH", body: JSON.stringify(data) });
+export const useUpdateExpense = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateExpense>>, TError, { id: number; data: UpdateExpenseBody }, TContext>; request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof updateExpense>>, TError, { id: number; data: UpdateExpenseBody }, TContext> =>
+  useMutation({ mutationFn: ({ id, data }) => updateExpense(id, data), ...options?.mutation });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const getListPaymentsUrl = (invoiceId: number) => `/api/invoices/${invoiceId}/payments`;
+export const listPayments = async (invoiceId: number, options?: RequestInit): Promise<Payment[]> =>
+  customFetch<Payment[]>(getListPaymentsUrl(invoiceId), { ...options, method: "GET" });
+export const getListPaymentsQueryKey = (invoiceId: number) => [`/api/invoices/${invoiceId}/payments`] as const;
+export function useListPayments<TData = Awaited<ReturnType<typeof listPayments>>, TError = ErrorType<unknown>>(
+  invoiceId: number,
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof listPayments>>, TError, TData>; request?: SecondParameter<typeof customFetch> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getListPaymentsQueryKey(invoiceId);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listPayments>>> = ({ signal }) => listPayments(invoiceId, { signal, ...requestOptions });
+  const query = useQuery({ queryKey, queryFn, enabled: !!invoiceId, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey };
+}
+
+export const createPayment = async (invoiceId: number, data: CreatePaymentBody, options?: RequestInit): Promise<Invoice> =>
+  customFetch<Invoice>(`/api/invoices/${invoiceId}/payments`, { ...options, method: "POST", body: JSON.stringify(data) });
+export const useCreatePayment = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof createPayment>>, TError, { invoiceId: number; data: CreatePaymentBody }, TContext>; request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof createPayment>>, TError, { invoiceId: number; data: CreatePaymentBody }, TContext> =>
+  useMutation({ mutationFn: ({ invoiceId, data }) => createPayment(invoiceId, data), ...options?.mutation });
+
+export const deletePayment = async (invoiceId: number, paymentId: number, options?: RequestInit): Promise<void> =>
+  customFetch<void>(`/api/invoices/${invoiceId}/payments/${paymentId}`, { ...options, method: "DELETE" });
+export const useDeletePayment = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof deletePayment>>, TError, { invoiceId: number; paymentId: number }, TContext>; request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof deletePayment>>, TError, { invoiceId: number; paymentId: number }, TContext> =>
+  useMutation({ mutationFn: ({ invoiceId, paymentId }) => deletePayment(invoiceId, paymentId), ...options?.mutation });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPORTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const getGetGstReportUrl = (params?: GetGstReportParams) => {
+  const searchParams = new URLSearchParams();
+  if (params?.month) searchParams.set("month", params.month);
+  if (params?.year !== undefined) searchParams.set("year", String(params.year));
+  const qs = searchParams.toString();
+  return `/api/reports/gst${qs ? `?${qs}` : ""}`;
+};
+export const getGstReport = async (params?: GetGstReportParams, options?: RequestInit): Promise<GstReport> =>
+  customFetch<GstReport>(getGetGstReportUrl(params), { ...options, method: "GET" });
+export const getGetGstReportQueryKey = (params?: GetGstReportParams) => [`/api/reports/gst`, ...(params ? [params] : [])] as const;
+export function useGetGstReport<TData = Awaited<ReturnType<typeof getGstReport>>, TError = ErrorType<unknown>>(
+  params?: GetGstReportParams,
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getGstReport>>, TError, TData>; request?: SecondParameter<typeof customFetch> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetGstReportQueryKey(params);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getGstReport>>> = ({ signal }) => getGstReport(params, { signal, ...requestOptions });
+  const query = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey };
+}
+
+export const getGetProfitLossUrl = (params?: GetProfitLossParams) => {
+  const searchParams = new URLSearchParams();
+  if (params?.startDate) searchParams.set("startDate", params.startDate);
+  if (params?.endDate) searchParams.set("endDate", params.endDate);
+  const qs = searchParams.toString();
+  return `/api/reports/profit-loss${qs ? `?${qs}` : ""}`;
+};
+export const getProfitLoss = async (params?: GetProfitLossParams, options?: RequestInit): Promise<ProfitLoss> =>
+  customFetch<ProfitLoss>(getGetProfitLossUrl(params), { ...options, method: "GET" });
+export const getGetProfitLossQueryKey = (params?: GetProfitLossParams) => [`/api/reports/profit-loss`, ...(params ? [params] : [])] as const;
+export function useGetProfitLoss<TData = Awaited<ReturnType<typeof getProfitLoss>>, TError = ErrorType<unknown>>(
+  params?: GetProfitLossParams,
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getProfitLoss>>, TError, TData>; request?: SecondParameter<typeof customFetch> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetProfitLossQueryKey(params);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getProfitLoss>>> = ({ signal }) => getProfitLoss(params, { signal, ...requestOptions });
+  const query = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey };
 }

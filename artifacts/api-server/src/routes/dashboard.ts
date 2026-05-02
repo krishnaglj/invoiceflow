@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, sql, desc, and } from "drizzle-orm";
-import { db, invoicesTable, customersTable } from "@workspace/db";
+import { db, invoicesTable, customersTable, expensesTable } from "@workspace/db";
 import {
   GetDashboardStatsResponse,
   GetMonthlyRevenueResponse,
@@ -17,7 +17,7 @@ router.get("/dashboard/stats", requireAuth, async (req, res): Promise<void> => {
     .select({
       totalRevenue: sql<number>`coalesce(sum(case when status = 'paid' then total else 0 end), 0)::real`,
       paidInvoices: sql<number>`count(case when status = 'paid' then 1 end)::int`,
-      pendingAmount: sql<number>`coalesce(sum(case when status in ('sent', 'draft') then total else 0 end), 0)::real`,
+      pendingAmount: sql<number>`coalesce(sum(case when status in ('sent', 'draft', 'partial') then (total - paid_amount) else 0 end), 0)::real`,
       overdueCount: sql<number>`count(case when status = 'overdue' then 1 end)::int`,
       totalInvoices: sql<number>`count(*)::int`,
     })
@@ -29,13 +29,25 @@ router.get("/dashboard/stats", requireAuth, async (req, res): Promise<void> => {
     .from(customersTable)
     .where(eq(customersTable.userId, uid));
 
+  const [expenseStats] = await db
+    .select({
+      totalExpenses: sql<number>`coalesce(sum(amount), 0)::real`,
+    })
+    .from(expensesTable)
+    .where(eq(expensesTable.userId, uid));
+
+  const totalRevenue = stats?.totalRevenue ?? 0;
+  const totalExpenses = expenseStats?.totalExpenses ?? 0;
+
   const result = {
-    totalRevenue: stats?.totalRevenue ?? 0,
+    totalRevenue,
     paidInvoices: stats?.paidInvoices ?? 0,
     pendingAmount: stats?.pendingAmount ?? 0,
     overdueCount: stats?.overdueCount ?? 0,
     totalInvoices: stats?.totalInvoices ?? 0,
     totalCustomers: customerCount?.count ?? 0,
+    totalExpenses,
+    netProfit: totalRevenue - totalExpenses,
   };
 
   res.json(GetDashboardStatsResponse.parse(result));

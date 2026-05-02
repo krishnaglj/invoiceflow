@@ -2,7 +2,7 @@ import { pgTable, serial, text, integer, real, timestamp, boolean } from "drizzl
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const invoicesTable = pgTable("invoices", {
+export const estimatesTable = pgTable("estimates", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
   customerId: integer("customer_id"),
@@ -13,9 +13,9 @@ export const invoicesTable = pgTable("invoices", {
   customerCity: text("customer_city"),
   customerState: text("customer_state"),
   customerGstin: text("customer_gstin"),
-  invoiceNumber: text("invoice_number").notNull(),
-  invoiceDate: text("invoice_date").notNull(),
-  dueDate: text("due_date"),
+  estimateNumber: text("estimate_number").notNull(),
+  estimateDate: text("estimate_date").notNull(),
+  validUntil: text("valid_until"),
   status: text("status").notNull().default("draft"),
   placeOfSupply: text("place_of_supply"),
   supplyType: text("supply_type").notNull().default("intra"),
@@ -25,17 +25,16 @@ export const invoicesTable = pgTable("invoices", {
   taxPercent: real("tax_percent").notNull().default(0),
   taxAmount: real("tax_amount").notNull().default(0),
   total: real("total").notNull().default(0),
-  paidAmount: real("paid_amount").notNull().default(0),
   notes: text("notes"),
-  paymentTerms: text("payment_terms"),
   showBankDetails: boolean("show_bank_details").notNull().default(false),
+  convertedToInvoiceId: integer("converted_to_invoice_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
-export const invoiceItemsTable = pgTable("invoice_items", {
+export const estimateItemsTable = pgTable("estimate_items", {
   id: serial("id").primaryKey(),
-  invoiceId: integer("invoice_id").notNull(),
+  estimateId: integer("estimate_id").notNull(),
   productId: integer("product_id"),
   name: text("name").notNull(),
   description: text("description"),
@@ -47,14 +46,14 @@ export const invoiceItemsTable = pgTable("invoice_items", {
   amount: real("amount").notNull().default(0),
 });
 
-export const insertInvoiceSchema = createInsertSchema(invoicesTable).omit({
+export const insertEstimateSchema = createInsertSchema(estimatesTable).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
-export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
-export type Invoice = typeof invoicesTable.$inferSelect;
+export type InsertEstimate = z.infer<typeof insertEstimateSchema>;
+export type Estimate = typeof estimatesTable.$inferSelect;
 
-export const insertInvoiceItemSchema = createInsertSchema(invoiceItemsTable).omit({ id: true });
-export type InsertInvoiceItem = z.infer<typeof insertInvoiceItemSchema>;
-export type InvoiceItem = typeof invoiceItemsTable.$inferSelect;
+export const insertEstimateItemSchema = createInsertSchema(estimateItemsTable).omit({ id: true });
+export type InsertEstimateItem = z.infer<typeof insertEstimateItemSchema>;
+export type EstimateItem = typeof estimateItemsTable.$inferSelect;

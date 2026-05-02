@@ -1,19 +1,28 @@
+import { useState } from "react";
 import { useParams, useLocation } from "wouter";
-import { useGetInvoice, useGetBusinessProfile, useDeleteInvoice, useMarkInvoicePaid } from "@workspace/api-client-react";
+import {
+  useGetInvoice, useGetBusinessProfile, useDeleteInvoice,
+  useMarkInvoicePaid, useCreatePayment, useDeletePayment,
+} from "@workspace/api-client-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/status-badge";
-import { Printer, Share2, Edit, Trash2, CheckCircle, ChevronLeft } from "lucide-react";
+import { Printer, Share2, Edit, Trash2, CheckCircle, ChevronLeft, Plus, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QRCodeSVG } from "qrcode.react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 function numberToWords(amount: number): string {
-  const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
-    "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
-    "Seventeen", "Eighteen", "Nineteen"];
-  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+  const ones = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine",
+    "Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen",
+    "Seventeen","Eighteen","Nineteen"];
+  const tens = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
   function convertTens(n: number): string {
     if (n < 20) return ones[n];
     return tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "");
@@ -39,33 +48,31 @@ const HEADER_COLOR = "#ffffff";
 const BORDER = "1px solid #cbd5e1";
 const ALT_ROW = "#f8fafc";
 
-const cellStyle: React.CSSProperties = {
-  border: BORDER,
-  padding: "7px 10px",
-  verticalAlign: "top",
-  fontSize: 12,
-};
-const thStyle: React.CSSProperties = {
-  ...cellStyle,
-  backgroundColor: HEADER_BG,
-  color: HEADER_COLOR,
-  fontWeight: 600,
-  WebkitPrintColorAdjust: "exact",
-  printColorAdjust: "exact",
-};
+const cellStyle: React.CSSProperties = { border: BORDER, padding: "7px 10px", verticalAlign: "top", fontSize: 12 };
+const thStyle: React.CSSProperties = { ...cellStyle, backgroundColor: HEADER_BG, color: HEADER_COLOR, fontWeight: 600, WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" };
+
+const PAYMENT_METHODS = ["cash","upi","bank_transfer","cheque","card"] as const;
 
 export default function InvoiceDetail() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
   const invoiceId = parseInt(id || "0", 10);
+
   const { data: invoice, isLoading } = useGetInvoice(invoiceId, { query: { enabled: !!invoiceId } });
   const { data: profile } = useGetBusinessProfile();
 
   const deleteMut = useDeleteInvoice();
   const markPaidMut = useMarkInvoicePaid();
+  const createPaymentMut = useCreatePayment();
+  const deletePaymentMut = useDeletePayment();
+
+  const [payOpen, setPayOpen] = useState(false);
+  const [payAmount, setPayAmount] = useState("");
+  const [payDate, setPayDate] = useState(new Date().toISOString().split("T")[0]);
+  const [payMethod, setPayMethod] = useState<typeof PAYMENT_METHODS[number]>("cash");
+  const [payRef, setPayRef] = useState("");
 
   const handlePrint = () => window.print();
   const handleCopyLink = () => {
@@ -79,7 +86,7 @@ export default function InvoiceDetail() {
           toast({ title: "Invoice deleted" });
           queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
           setLocation("/invoices");
-        }
+        },
       });
     }
   };
@@ -88,12 +95,46 @@ export default function InvoiceDetail() {
       onSuccess: () => {
         toast({ title: "Invoice marked as paid!" });
         queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
-      }
+        queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      },
     });
   };
 
-  if (isLoading || !invoice || !profile) return <div className="p-8">Loading...</div>;
+  const handleAddPayment = () => {
+    const amt = parseFloat(payAmount);
+    if (!amt || amt <= 0) { toast({ title: "Enter a valid amount", variant: "destructive" }); return; }
+    createPaymentMut.mutate(
+      { invoiceId, data: { invoiceId, amount: amt, date: payDate, method: payMethod, reference: payRef || undefined } },
+      {
+        onSuccess: () => {
+          toast({ title: "Payment recorded!" });
+          queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
+          queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+          setPayOpen(false);
+          setPayAmount("");
+          setPayRef("");
+        },
+        onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+      },
+    );
+  };
 
+  const handleDeletePayment = (paymentId: number) => {
+    if (!confirm("Remove this payment?")) return;
+    deletePaymentMut.mutate({ invoiceId, paymentId }, {
+      onSuccess: () => {
+        toast({ title: "Payment removed" });
+        queryClient.invalidateQueries({ queryKey: [`/api/invoices/${invoiceId}`] });
+        queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      },
+    });
+  };
+
+  if (isLoading || !invoice || !profile) return <div className="p-8 text-center">Loading...</div>;
+
+  const supplyType = invoice.supplyType ?? "intra";
   const discountAmount = invoice.discountValue > 0
     ? invoice.discountType === "percent"
       ? invoice.subtotal * (invoice.discountValue / 100)
@@ -101,44 +142,94 @@ export default function InvoiceDetail() {
     : 0;
   const taxableAmount = invoice.subtotal - discountAmount;
   const halfTax = invoice.taxPercent / 2;
-  const cgstAmount = invoice.taxAmount / 2;
-  const sgstAmount = invoice.taxAmount / 2;
+  const cgstAmount = supplyType === "intra" ? invoice.taxAmount / 2 : 0;
+  const sgstAmount = supplyType === "intra" ? invoice.taxAmount / 2 : 0;
+  const igstAmount = supplyType === "inter" ? invoice.taxAmount : 0;
+
   const upiValue = profile.upiId
     ? `upi://pay?pa=${profile.upiId}&pn=${encodeURIComponent(profile.shopName)}&cu=INR`
     : null;
   const totalQty = invoice.items.reduce((s, it) => s + it.quantity, 0);
+  const remaining = invoice.total - invoice.paidAmount;
 
   return (
     <div className="bg-muted/20 min-h-screen pb-20 print:min-h-0 print:pb-0 print:bg-white">
       <style>{`
         @media print {
           @page { size: A4; margin: 10mm; }
-          html, body { height: auto !important; min-height: 0 !important; overflow: visible !important; }
+          html, body { height: auto !important; overflow: visible !important; }
           .no-print { display: none !important; }
         }
       `}</style>
 
-      {/* ── ACTION BAR (no print) ── */}
+      {/* ── ACTION BAR ── */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b px-3 sm:px-4 py-3 flex items-center justify-between no-print shadow-sm gap-2">
         <Button variant="ghost" className="rounded-xl shrink-0" onClick={() => window.history.back()}>
           <ChevronLeft className="w-5 h-5 sm:mr-1" /><span className="hidden sm:inline">Back</span>
         </Button>
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           {invoice.status !== "paid" && (
-            <Button variant="outline" size="icon" className="rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 sm:w-auto sm:px-3 sm:gap-2" onClick={handleMarkPaid} disabled={markPaidMut.isPending}>
-              <CheckCircle className="w-4 h-4 shrink-0" /><span className="hidden sm:inline">Mark Paid</span>
+            <Button variant="outline" size="sm" className="rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50" onClick={handleMarkPaid} disabled={markPaidMut.isPending}>
+              <CheckCircle className="w-4 h-4 sm:mr-2 shrink-0" /><span className="hidden sm:inline">Mark Paid</span>
             </Button>
           )}
-          <Button variant="outline" size="icon" className="rounded-xl sm:w-auto sm:px-3 sm:gap-2" onClick={() => setLocation(`/invoices/${invoiceId}/edit`)}>
-            <Edit className="w-4 h-4 shrink-0" /><span className="hidden sm:inline">Edit</span>
+          {/* Record partial payment */}
+          {invoice.status !== "paid" && (
+            <Dialog open={payOpen} onOpenChange={setPayOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50">
+                  <Plus className="w-4 h-4 sm:mr-2 shrink-0" /><span className="hidden sm:inline">Record Payment</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-sm rounded-2xl">
+                <DialogHeader><DialogTitle>Record Payment</DialogTitle></DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <div className="p-3 rounded-xl bg-muted/50 text-sm space-y-1">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Total</span><span className="font-semibold">{formatCurrency(invoice.total)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Paid</span><span className="font-semibold text-emerald-600">{formatCurrency(invoice.paidAmount)}</span></div>
+                    <div className="flex justify-between border-t pt-1"><span className="font-medium">Remaining</span><span className="font-bold text-primary">{formatCurrency(remaining)}</span></div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Amount (₹) *</Label>
+                    <Input
+                      type="number" step="0.01"
+                      value={payAmount}
+                      onChange={(e) => setPayAmount(e.target.value)}
+                      placeholder={formatCurrency(remaining)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date *</Label>
+                    <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Method</Label>
+                    <Select value={payMethod} onValueChange={(v) => setPayMethod(v as any)}>
+                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}>{m.replace("_", " ").toUpperCase()}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Reference / UTR</Label>
+                    <Input value={payRef} onChange={(e) => setPayRef(e.target.value)} placeholder="Optional" />
+                  </div>
+                  <Button className="w-full" onClick={handleAddPayment} disabled={createPaymentMut.isPending}>Save Payment</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+          <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setLocation(`/invoices/${invoiceId}/edit`)}>
+            <Edit className="w-4 h-4 sm:mr-2 shrink-0" /><span className="hidden sm:inline">Edit</span>
           </Button>
-          <Button variant="outline" size="icon" className="rounded-xl sm:w-auto sm:px-3 sm:gap-2" onClick={handlePrint}>
-            <Printer className="w-4 h-4 shrink-0" /><span className="hidden sm:inline">Print PDF</span>
+          <Button variant="outline" size="sm" className="rounded-xl" onClick={handlePrint}>
+            <Printer className="w-4 h-4 sm:mr-2 shrink-0" /><span className="hidden sm:inline">Print</span>
           </Button>
           <Dialog>
             <DialogTrigger asChild>
-              <Button size="icon" className="rounded-xl shadow-lg shadow-primary/20 sm:w-auto sm:px-3 sm:gap-2">
-                <Share2 className="w-4 h-4 shrink-0" /><span className="hidden sm:inline">Share</span>
+              <Button size="sm" className="rounded-xl shadow-lg shadow-primary/20">
+                <Share2 className="w-4 h-4 sm:mr-2 shrink-0" /><span className="hidden sm:inline">Share</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md rounded-2xl">
@@ -156,17 +247,46 @@ export default function InvoiceDetail() {
               </div>
             </DialogContent>
           </Dialog>
-          <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 rounded-xl ml-2" onClick={handleDelete}>
-            <Trash2 className="w-5 h-5" />
+          <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 rounded-xl" onClick={handleDelete}>
+            <Trash2 className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
+      {/* ── PAYMENT HISTORY (screen only) ── */}
+      {invoice.payments && invoice.payments.length > 0 && (
+        <div className="max-w-[210mm] mx-auto mt-4 no-print">
+          <Card className="rounded-2xl border-border/50 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm">Payment History</h3>
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Balance: </span>
+                  <span className={`font-bold ${remaining <= 0 ? "text-emerald-600" : "text-primary"}`}>{formatCurrency(remaining)}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {invoice.payments.map((pay) => (
+                  <div key={pay.id} className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/40">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <p className="font-medium">{formatCurrency(pay.amount)}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(pay.date).toLocaleDateString("en-IN")} · {pay.method.replace("_", " ").toUpperCase()}{pay.reference ? ` · ${pay.reference}` : ""}</p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDeletePayment(pay.id)}>
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* ── PRINTABLE INVOICE ── */}
-      <div
-        className="max-w-[210mm] mx-auto mt-6 print:mt-0 bg-white shadow-2xl print:shadow-none border print:border-0"
-        style={{ fontFamily: "Arial, sans-serif", color: "#000" }}
-      >
+      <div className="max-w-[210mm] mx-auto mt-6 print:mt-0 bg-white shadow-2xl print:shadow-none border print:border-0" style={{ fontFamily: "Arial, sans-serif", color: "#000" }}>
         <div className="p-8 print:p-8">
 
           {/* HEADER */}
@@ -197,11 +317,12 @@ export default function InvoiceDetail() {
 
           <div style={{ borderTop: "2.5px solid #000", margin: "10px 0 8px" }} />
 
-          {/* INVOICE META */}
-          <div style={{ display: "flex", gap: 24, fontSize: 12, marginBottom: 8 }}>
+          {/* META */}
+          <div style={{ display: "flex", gap: 24, fontSize: 12, marginBottom: 4, flexWrap: "wrap" }}>
             <div><span style={{ color: "#666" }}>Invoice #:</span> <strong>{invoice.invoiceNumber}</strong></div>
             <div><span style={{ color: "#666" }}>Invoice Date:</span> <strong>{formatDate(invoice.invoiceDate)}</strong></div>
             {invoice.dueDate && <div><span style={{ color: "#666" }}>Due Date:</span> <strong>{formatDate(invoice.dueDate)}</strong></div>}
+            {invoice.placeOfSupply && <div><span style={{ color: "#666" }}>Place of Supply:</span> <strong>{invoice.placeOfSupply}</strong></div>}
           </div>
 
           <div style={{ borderTop: "1px solid #ddd", margin: "8px 0" }} />
@@ -225,9 +346,11 @@ export default function InvoiceDetail() {
               <tr>
                 <th style={{ ...thStyle, textAlign: "center", width: 28 }}>#</th>
                 <th style={{ ...thStyle, textAlign: "left" }}>Description</th>
-                <th style={{ ...thStyle, textAlign: "right", width: 70 }}>Qty</th>
-                <th style={{ ...thStyle, textAlign: "right", width: 90 }}>Rate</th>
-                <th style={{ ...thStyle, textAlign: "right", width: 100 }}>Amount</th>
+                <th style={{ ...thStyle, textAlign: "left", width: 70 }}>HSN/SAC</th>
+                <th style={{ ...thStyle, textAlign: "right", width: 60 }}>Qty</th>
+                <th style={{ ...thStyle, textAlign: "right", width: 80 }}>Rate</th>
+                <th style={{ ...thStyle, textAlign: "right", width: 40 }}>GST%</th>
+                <th style={{ ...thStyle, textAlign: "right", width: 90 }}>Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -238,8 +361,10 @@ export default function InvoiceDetail() {
                     <div style={{ fontWeight: 600 }}>{item.name}</div>
                     {item.description && <div style={{ color: "#777", fontSize: 11, marginTop: 2 }}>{item.description}</div>}
                   </td>
+                  <td style={{ ...cellStyle, color: "#666" }}>{item.hsnCode || "—"}</td>
                   <td style={{ ...cellStyle, textAlign: "right" }}>{item.quantity} {item.unit}</td>
                   <td style={{ ...cellStyle, textAlign: "right" }}>{formatCurrency(item.rate)}</td>
+                  <td style={{ ...cellStyle, textAlign: "right" }}>{item.taxRate}%</td>
                   <td style={{ ...cellStyle, textAlign: "right", fontWeight: 600 }}>{formatCurrency(item.amount)}</td>
                 </tr>
               ))}
@@ -251,7 +376,7 @@ export default function InvoiceDetail() {
             <tbody>
               <tr>
                 <td style={{ ...cellStyle, borderTop: "none", color: "#555", fontSize: 11 }}>
-                  Total Items / Qty : {invoice.items.length} / {totalQty.toFixed(3)}
+                  Total Items / Qty : {invoice.items.length} / {totalQty.toFixed(2)}
                 </td>
                 <td style={{ ...cellStyle, borderTop: "none", fontSize: 11, fontStyle: "italic", color: "#555" }}>
                   Total amount (in words): <strong style={{ color: "#000", fontStyle: "normal" }}>{numberToWords(invoice.total)}</strong>
@@ -262,7 +387,7 @@ export default function InvoiceDetail() {
 
           {/* TOTALS */}
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 0, marginBottom: 16 }}>
-            <table style={{ borderCollapse: "collapse", minWidth: 240 }}>
+            <table style={{ borderCollapse: "collapse", minWidth: 260 }}>
               <tbody>
                 <tr>
                   <td style={{ ...cellStyle, borderTop: "none", color: "#555" }}>Taxable Amount</td>
@@ -270,15 +395,11 @@ export default function InvoiceDetail() {
                 </tr>
                 {discountAmount > 0 && (
                   <tr>
-                    <td style={{ ...cellStyle, color: "#555" }}>
-                      Discount {invoice.discountType === "percent" ? `(${invoice.discountValue}%)` : ""}
-                    </td>
-                    <td style={{ ...cellStyle, textAlign: "right", color: "#16a34a", fontWeight: 600 }}>
-                      -{formatCurrency(discountAmount)}
-                    </td>
+                    <td style={{ ...cellStyle, color: "#555" }}>Discount {invoice.discountType === "percent" ? `(${invoice.discountValue}%)` : ""}</td>
+                    <td style={{ ...cellStyle, textAlign: "right", color: "#16a34a", fontWeight: 600 }}>−{formatCurrency(discountAmount)}</td>
                   </tr>
                 )}
-                {invoice.taxPercent > 0 && (
+                {invoice.taxPercent > 0 && supplyType === "intra" && (
                   <>
                     <tr>
                       <td style={{ ...cellStyle, color: "#555" }}>CGST {halfTax}%</td>
@@ -290,9 +411,25 @@ export default function InvoiceDetail() {
                     </tr>
                   </>
                 )}
+                {invoice.taxPercent > 0 && supplyType === "inter" && (
+                  <tr>
+                    <td style={{ ...cellStyle, color: "#555" }}>IGST {invoice.taxPercent}%</td>
+                    <td style={{ ...cellStyle, textAlign: "right", fontWeight: 600 }}>{formatCurrency(igstAmount)}</td>
+                  </tr>
+                )}
+                {invoice.paidAmount > 0 && invoice.status !== "paid" && (
+                  <tr>
+                    <td style={{ ...cellStyle, color: "#16a34a" }}>Amount Received</td>
+                    <td style={{ ...cellStyle, textAlign: "right", color: "#16a34a", fontWeight: 600 }}>−{formatCurrency(invoice.paidAmount)}</td>
+                  </tr>
+                )}
                 <tr style={{ backgroundColor: HEADER_BG, color: HEADER_COLOR, WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>
-                  <td style={{ ...cellStyle, fontWeight: 700, fontSize: 14, border: "1px solid #1e293b", backgroundColor: HEADER_BG, color: HEADER_COLOR, WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>Total</td>
-                  <td style={{ ...cellStyle, fontWeight: 800, fontSize: 16, textAlign: "right", border: "1px solid #1e293b", backgroundColor: HEADER_BG, color: HEADER_COLOR, WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>{formatCurrency(invoice.total)}</td>
+                  <td style={{ ...cellStyle, fontWeight: 700, fontSize: 14, border: "1px solid #1e293b", backgroundColor: HEADER_BG, color: HEADER_COLOR, WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>
+                    {invoice.status === "partial" ? "Balance Due" : "Total"}
+                  </td>
+                  <td style={{ ...cellStyle, fontWeight: 800, fontSize: 16, textAlign: "right", border: "1px solid #1e293b", backgroundColor: HEADER_BG, color: HEADER_COLOR, WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>
+                    {formatCurrency(invoice.status === "partial" ? remaining : invoice.total)}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -324,16 +461,14 @@ export default function InvoiceDetail() {
                   <td style={{ ...cellStyle, width: 130, textAlign: "right", verticalAlign: "bottom" }}>
                     <div style={{ fontSize: 11, color: "#666" }}>For</div>
                     <div style={{ fontWeight: 700, fontSize: 12 }}>{profile.shopName}</div>
-                    <div style={{ marginTop: 40, borderTop: "1px solid #aaa", paddingTop: 4, fontSize: 10, color: "#666" }}>
-                      Authorized Signatory
-                    </div>
+                    <div style={{ marginTop: 40, borderTop: "1px solid #aaa", paddingTop: 4, fontSize: 10, color: "#666" }}>Authorized Signatory</div>
                   </td>
                 </tr>
               </tbody>
             </table>
           )}
 
-          {/* NOTES & TERMS */}
+          {/* NOTES */}
           <div style={{ pageBreakInside: "avoid" }}>
             {invoice.notes && (
               <div style={{ marginBottom: 10 }}>
@@ -347,24 +482,18 @@ export default function InvoiceDetail() {
                 <div style={{ fontSize: 11, color: "#555", whiteSpace: "pre-line" }}>{invoice.paymentTerms}</div>
               </div>
             )}
-
-            {/* THANK YOU */}
             <div style={{ borderTop: "1px dashed #ddd", marginTop: 12, paddingTop: 10, textAlign: "center" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "#333" }}>Thank you for your business!</div>
               <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>We appreciate your trust and look forward to working with you again.</div>
             </div>
-
-            {/* PAGE FOOTER */}
             <div style={{ borderTop: "1px solid #e5e7eb", marginTop: 12, paddingTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontSize: 10, color: "#999" }}>Page 1 / 1</div>
               <div style={{ fontSize: 10, color: "#999", fontStyle: "italic" }}>This is a digitally signed document.</div>
             </div>
-
-            {/* WATERMARK */}
             <div style={{ textAlign: "center", marginTop: 6 }}>
               <span style={{ fontSize: 10, color: "#bbb" }}>Made with </span>
               <span style={{ fontSize: 10, color: "#e11d48" }}>❤️</span>
-              <span style={{ fontSize: 10, color: "#bbb" }}> by EntireSteps</span>
+              <span style={{ fontSize: 10, color: "#bbb" }}> by InvoiceFlow</span>
             </div>
           </div>
 

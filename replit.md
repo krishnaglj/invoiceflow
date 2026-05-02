@@ -47,12 +47,19 @@ artifacts-monorepo/
 - `/onboarding` — 3-step business profile setup (redirected to automatically if no profile exists after login)
 - `/dashboard` — Stats, revenue chart, recent invoices, top customers
 - `/invoices` — Invoice list with status filters and search
-- `/invoices/new` — Create invoice with dynamic line items
-- `/invoices/:id` — Invoice preview with Print/Share/Edit/Mark Paid actions
+- `/invoices/new` — Create invoice with dynamic line items, HSN/SAC per item, GST rate per item, placeOfSupply, supplyType (CGST/SGST vs IGST)
+- `/invoices/:id` — Invoice preview with Print/Share/Edit/Mark Paid, payment recording UI, IGST/CGST display, payment history panel
 - `/invoices/:id/edit` — Edit invoice
+- `/estimates` — Estimates list with status filters (draft/sent/accepted/rejected/converted)
+- `/estimates/new` — Create estimate (mirrors invoice form)
+- `/estimates/:id` — Estimate detail with Convert-to-Invoice button
+- `/estimates/:id/edit` — Edit estimate
+- `/expenses` — Expenses list with category/date filters and summary cards
+- `/expenses/new` — Log expense (date, category, vendor, amount, method)
+- `/reports` — GST Report (GSTR-1 style by slab, month/year filter) + P&L (6-month bar chart, expense breakdown)
 - `/customers` — Customer directory
 - `/customers/:id` — Customer detail with invoice history
-- `/products` — Product/service library
+- `/products` — Product/service library with HSN code and GST rate fields
 - `/settings` — Business profile and invoice settings
 
 ### Authentication
@@ -74,9 +81,13 @@ artifacts-monorepo/
 - `auth_verification` — Email verification tokens
 - `business_profiles` — Business info, bank details, invoice settings (scoped by userId)
 - `customers` — Customer directory (scoped by userId)
-- `products` — Product/service library with default rates (scoped by userId)
-- `invoices` — Invoice records with computed totals (scoped by userId)
-- `invoice_items` — Line items per invoice
+- `products` — Product/service library with default rates, hsnCode, taxRate (scoped by userId)
+- `invoices` — Invoice records with computed totals, placeOfSupply, supplyType, paidAmount (scoped by userId)
+- `invoice_items` — Line items per invoice with hsnCode, taxRate
+- `estimates` — Estimate records mirroring invoice structure with status (draft/sent/accepted/rejected/converted), convertedToInvoiceId
+- `estimate_items` — Line items per estimate with hsnCode, taxRate
+- `expenses` — Expense records (date, category, amount, vendor, paymentMethod, reference, receiptUrl)
+- `payments` — Payment records per invoice (amount, date, method, reference, notes); auto-recalculates invoice paidAmount and status (partial/paid)
 
 ### API Endpoints (under /api)
 - `GET/POST/PATCH /business-profile`
@@ -85,9 +96,22 @@ artifacts-monorepo/
 - `GET/POST /invoices`, `GET/PATCH/DELETE /invoices/:id`
 - `PATCH /invoices/:id/mark-paid`
 - `GET /invoices/next-number`
-- `GET /dashboard/stats`
+- `GET/POST /invoices/:invoiceId/payments`, `DELETE /invoices/:invoiceId/payments/:paymentId`
+- `GET/POST /estimates`, `GET/PATCH/DELETE /estimates/:id`
+- `POST /estimates/:id/convert` — converts estimate to invoice
+- `GET /estimates/next-number`
+- `GET/POST /expenses`, `GET/PATCH/DELETE /expenses/:id`
+- `GET /reports/gst` — GSTR-1 style summary by tax slab with month/year filter
+- `GET /reports/profit-loss` — 6-month P&L with expenses by category
+- `GET /dashboard/stats` — now includes totalExpenses + netProfit
 - `GET /dashboard/monthly-revenue`
 - `GET /dashboard/top-customers`
+
+### Key Implementation Notes
+- supplyType `intra` → CGST + SGST split; `inter` → IGST only
+- Payments auto-recalc invoice `paidAmount`; status set to `partial` if paidAmount < total, `paid` if equal
+- `UpdateBusinessProfileResponse` is an alias for `GetBusinessProfileResponse` in api-zod (not auto-generated, added manually)
+- api-zod schemas are manually maintained (not regenerated from OpenAPI) — edit `lib/api-zod/src/generated/api.ts` directly
 
 ## TypeScript & Composite Projects
 

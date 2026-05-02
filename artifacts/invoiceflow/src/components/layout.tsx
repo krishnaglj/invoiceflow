@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn, refreshInvoicePrefix } from "@/lib/utils";
-import { LayoutDashboard, Receipt, Users, Package, Settings, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, Package, Settings, LogOut, Menu, X, FileText, TrendingDown, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useState, useEffect } from "react";
@@ -21,8 +21,11 @@ function usePrefixRefresh() {
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: Receipt, label: "Invoices", href: "/invoices" },
+  { icon: FileText, label: "Estimates", href: "/estimates" },
+  { icon: TrendingDown, label: "Expenses", href: "/expenses" },
   { icon: Users, label: "Customers", href: "/customers" },
   { icon: Package, label: "Products", href: "/products" },
+  { icon: BarChart2, label: "Reports", href: "/reports" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
@@ -45,17 +48,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex bg-background">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col border-r bg-card h-screen sticky top-0 no-print">
-        <div className="h-16 flex items-center px-6 border-b border-border/50">
+      <aside className="hidden md:flex w-60 flex-col border-r bg-card h-screen sticky top-0 no-print">
+        <div className="h-14 flex items-center px-5 border-b border-border/50">
           <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md shadow-primary/20">
-              <span className="text-white font-display font-bold text-lg leading-none">I</span>
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md shadow-primary/20">
+              <span className="text-white font-display font-bold text-base leading-none">I</span>
             </div>
-            <span className="font-display font-bold text-xl tracking-tight text-foreground">InvoiceFlow</span>
+            <span className="font-display font-bold text-lg tracking-tight text-foreground">InvoiceFlow</span>
           </Link>
         </div>
 
-        <div className="flex-1 py-6 px-3 flex flex-col gap-1 overflow-y-auto">
+        <div className="flex-1 py-4 px-2 flex flex-col gap-0.5 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const isActive = location === item.href || location.startsWith(item.href + "/");
             return (
@@ -63,25 +66,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-all duration-200",
+                  "flex items-center gap-3 px-3 py-2 rounded-xl font-medium transition-all duration-200 text-sm",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-md shadow-primary/10"
                     : "text-muted-foreground hover:bg-secondary hover:text-foreground hover-elevate",
                 )}
               >
-                <item.icon className="w-5 h-5" />
+                <item.icon className="w-4 h-4 shrink-0" />
                 {item.label}
               </Link>
             );
           })}
         </div>
 
-        <div className="p-4 border-t border-border/50 space-y-2">
+        <div className="p-3 border-t border-border/50 space-y-1">
           <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-muted/40">
             {avatarUrl ? (
-              <img src={avatarUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover" />
+              <img src={avatarUrl} alt={displayName} className="w-6 h-6 rounded-full object-cover" />
             ) : (
-              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
                 <span className="text-xs font-bold text-primary">{initials}</span>
               </div>
             )}
@@ -89,10 +92,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
           <Button
             variant="ghost"
-            className="w-full justify-start text-muted-foreground hover:text-destructive"
+            className="w-full justify-start text-muted-foreground hover:text-destructive text-sm"
             onClick={handleSignOut}
           >
-            <LogOut className="w-5 h-5 mr-3" />
+            <LogOut className="w-4 h-4 mr-3" />
             Sign Out
           </Button>
         </div>
@@ -120,13 +123,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  "flex items-center gap-4 px-4 py-4 rounded-xl font-medium text-lg",
+                  "flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-base",
                   location.startsWith(item.href)
                     ? "bg-primary text-primary-foreground"
                     : "bg-card text-foreground border",
                 )}
               >
-                <item.icon className="w-6 h-6" />
+                <item.icon className="w-5 h-5" />
                 {item.label}
               </Link>
             ))}
@@ -143,9 +146,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
               <button
                 onClick={() => { setMobileOpen(false); handleSignOut(); }}
-                className="flex items-center gap-4 px-4 py-4 rounded-xl font-medium text-lg w-full bg-card text-destructive border"
+                className="flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-base w-full bg-card text-destructive border"
               >
-                <LogOut className="w-6 h-6" />
+                <LogOut className="w-5 h-5" />
                 Sign Out
               </button>
             </div>
