@@ -64,7 +64,7 @@ export function CustomerSearch({ customers, selectedId, onSelect, onClear, onCre
               <div className="min-w-0 text-left">
                 <span className="text-sm font-medium truncate block">{selected.name}</span>
                 {selected.phone && (
-                  <span className="text-xs text-muted-foreground truncate block">{selected.phone}</span>
+                  <span className="text-xs text-foreground/80 truncate block">{selected.phone}</span>
                 )}
               </div>
             </div>
@@ -131,7 +131,7 @@ export function CustomerSearch({ customers, selectedId, onSelect, onClear, onCre
                       </div>
                       <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                         {customer.phone && (
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1 text-xs text-foreground/80">
                             <Phone className="w-3 h-3" /> {customer.phone}
                           </span>
                         )}

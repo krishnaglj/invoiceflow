@@ -131,7 +131,7 @@ export default function Customers() {
               </div>
 
               <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <p className="flex items-center gap-2"><Phone className="w-4 h-4" /> {c.phone}</p>
+                <p className="flex items-center gap-2 text-foreground/80"><Phone className="w-4 h-4" /> {c.phone}</p>
                 {c.email && <p className="flex items-center gap-2 truncate"><Mail className="w-4 h-4 shrink-0" /> {c.email}</p>}
               </div>
             </CardContent>
