@@ -50,6 +50,9 @@ FROM node:22-slim AS runner
 
 WORKDIR /app
 
+# Install runtime deps that are kept external from the esbuild bundle
+RUN npm install --no-save nodemailer@8
+
 # Copy bundled API (esbuild bundles everything including @opentelemetry)
 COPY --from=api-builder  /app/artifacts/api-server/dist ./dist
 
