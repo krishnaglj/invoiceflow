@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronsUpDown, Phone, Mail, Building2, UserX } from "lucide-react";
+import { Check, ChevronsUpDown, Phone, Mail, Building2, UserX, UserPlus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -26,9 +26,10 @@ interface CustomerSearchProps {
   selectedId?: number | null;
   onSelect: (customerId: string) => void;
   onClear?: () => void;
+  onCreateNew?: (name: string) => void;
 }
 
-export function CustomerSearch({ customers, selectedId, onSelect, onClear }: CustomerSearchProps) {
+export function CustomerSearch({ customers, selectedId, onSelect, onClear, onCreateNew }: CustomerSearchProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -148,6 +149,23 @@ export function CustomerSearch({ customers, selectedId, onSelect, onClear }: Cus
                   </CommandItem>
                 ))}
               </CommandGroup>
+            )}
+
+            {onCreateNew && (
+              <>
+                <CommandSeparator />
+                <CommandGroup>
+                  <CommandItem
+                    onSelect={() => { onCreateNew(query); setOpen(false); setQuery(""); }}
+                    className="flex items-center gap-2 px-3 py-2.5 cursor-pointer text-primary rounded-lg mx-1 font-medium"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span className="text-sm">
+                      {query.trim() ? `Create "${query.trim()}"` : "Create new customer"}
+                    </span>
+                  </CommandItem>
+                </CommandGroup>
+              </>
             )}
 
             {selected && onClear && (

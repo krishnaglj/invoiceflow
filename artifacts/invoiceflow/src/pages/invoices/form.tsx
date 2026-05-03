@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, Save, Send } from "lucide-react";
 import { CustomerSearch } from "@/components/customer-search";
+import { QuickAddCustomerDialog } from "@/components/quick-add-customer-dialog";
+import { QuickAddProductDialog } from "@/components/quick-add-product-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useInvoiceCalculations } from "@/hooks/use-invoice-calc";
 import { formatCurrency } from "@/lib/utils";
@@ -80,6 +82,9 @@ export default function InvoiceForm() {
 
   const createMut = useCreateInvoice();
   const updateMut = useUpdateInvoice();
+
+  const [quickCustomer, setQuickCustomer] = useState<{ open: boolean; name: string }>({ open: false, name: "" });
+  const [quickProduct, setQuickProduct] = useState<{ open: boolean; itemIndex: number }>({ open: false, itemIndex: 0 });
 
   const form = useForm<z.infer<typeof invoiceSchema>>({
     resolver: zodResolver(invoiceSchema),
@@ -228,21 +233,20 @@ export default function InvoiceForm() {
                 <div className="space-y-4 border p-4 rounded-xl bg-muted/20">
                   <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Bill To</h3>
                   <div className="space-y-3">
-                    {customers && customers.length > 0 && (
-                      <CustomerSearch
-                        customers={customers}
-                        selectedId={form.watch("customerId")}
-                        onSelect={handleCustomerSelect}
-                        onClear={() => {
-                          form.setValue("customerId", undefined);
-                          form.setValue("customerName", "");
-                          form.setValue("customerPhone", "");
-                          form.setValue("customerEmail", "");
-                          form.setValue("customerAddress", "");
-                          form.setValue("customerGstin", "");
-                        }}
-                      />
-                    )}
+                    <CustomerSearch
+                      customers={customers ?? []}
+                      selectedId={form.watch("customerId")}
+                      onSelect={handleCustomerSelect}
+                      onCreateNew={(name) => setQuickCustomer({ open: true, name })}
+                      onClear={() => {
+                        form.setValue("customerId", undefined);
+                        form.setValue("customerName", "");
+                        form.setValue("customerPhone", "");
+                        form.setValue("customerEmail", "");
+                        form.setValue("customerAddress", "");
+                        form.setValue("customerGstin", "");
+                      }}
+                    />
                     <Input {...form.register("customerName")} placeholder="Customer Name *" className="bg-background font-medium" />
                     <Input {...form.register("customerPhone")} placeholder="Phone" className="bg-background" />
                     <Input {...form.register("customerGstin")} placeholder="GSTIN (optional)" className="bg-background text-sm" />
@@ -294,16 +298,20 @@ export default function InvoiceForm() {
               <div className="divide-y">
                 {fields.map((field, index) => (
                   <div key={field.id} className="p-4 space-y-3 group">
-                    {products && products.length > 0 && (
-                      <Select onValueChange={(v) => handleProductSelect(index, v)}>
-                        <SelectTrigger className="h-9 text-xs bg-muted/30">
-                          <SelectValue placeholder="Pick from product library..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {products.map((p) => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    )}
+                    <Select onValueChange={(v) => {
+                      if (v === "__new__") { setQuickProduct({ open: true, itemIndex: index }); }
+                      else { handleProductSelect(index, v); }
+                    }}>
+                      <SelectTrigger className="h-9 text-xs bg-muted/30">
+                        <SelectValue placeholder="Pick from product library or add new..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(products ?? []).map((p) => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}
+                        <SelectItem value="__new__" className="text-primary font-medium">
+                          + Add new product to library
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
 
                     <div className="flex gap-2 items-center">
                       <Input {...form.register(`items.${index}.name`)} placeholder="Item name *" className="flex-1 font-medium" />
@@ -443,6 +451,35 @@ export default function InvoiceForm() {
           </Card>
         </div>
       </div>
+
+      {/* Quick-add dialogs */}
+      <QuickAddCustomerDialog
+        open={quickCustomer.open}
+        initialName={quickCustomer.name}
+        onOpenChange={(open) => setQuickCustomer((s) => ({ ...s, open }))}
+        onCreated={(customer) => {
+          form.setValue("customerId", customer.id);
+          form.setValue("customerName", customer.name);
+          form.setValue("customerPhone", customer.phone ?? "");
+          form.setValue("customerEmail", customer.email ?? "");
+          form.setValue("customerGstin", customer.gstin ?? "");
+          form.setValue("customerAddress", customer.address ?? "");
+        }}
+      />
+
+      <QuickAddProductDialog
+        open={quickProduct.open}
+        onOpenChange={(open) => setQuickProduct((s) => ({ ...s, open }))}
+        onCreated={(product) => {
+          const i = quickProduct.itemIndex;
+          form.setValue(`items.${i}.name`, product.name);
+          form.setValue(`items.${i}.rate`, product.defaultRate);
+          form.setValue(`items.${i}.unit`, product.unit);
+          if (product.hsnCode) form.setValue(`items.${i}.hsnCode`, product.hsnCode);
+          if (product.taxRate) form.setValue(`items.${i}.taxRate`, product.taxRate);
+          if (product.description) form.setValue(`items.${i}.description`, product.description);
+        }}
+      />
     </div>
   );
 }
