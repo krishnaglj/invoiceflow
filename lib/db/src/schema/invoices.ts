@@ -26,6 +26,8 @@ export const invoicesTable = pgTable("invoices", {
   taxAmount: real("tax_amount").notNull().default(0),
   total: real("total").notNull().default(0),
   paidAmount: real("paid_amount").notNull().default(0),
+  tdsRate: real("tds_rate").notNull().default(0),
+  tdsAmount: real("tds_amount").notNull().default(0),
   notes: text("notes"),
   paymentTerms: text("payment_terms"),
   showBankDetails: boolean("show_bank_details").notNull().default(false),

@@ -322,6 +322,8 @@ export interface Invoice {
   taxAmount: number;
   total: number;
   paidAmount: number;
+  tdsRate: number;
+  tdsAmount: number;
   /** @nullable */
   notes?: string | null;
   /** @nullable */
@@ -370,6 +372,7 @@ export interface CreateInvoiceBody {
   discountType?: CreateInvoiceBodyDiscountType;
   discountValue?: number;
   taxPercent?: number;
+  tdsRate?: number;
   notes?: string;
   paymentTerms?: string;
   showBankDetails?: boolean;
@@ -413,6 +416,7 @@ export interface UpdateInvoiceBody {
   discountType?: UpdateInvoiceBodyDiscountType;
   discountValue?: number;
   taxPercent?: number;
+  tdsRate?: number;
   notes?: string;
   paymentTerms?: string;
   showBankDetails?: boolean;
@@ -1104,4 +1108,132 @@ export interface CreateRecurringInvoiceBody {
 
 export interface UpdateRecurringInvoiceBody extends Partial<CreateRecurringInvoiceBody> {
   status?: 'active' | 'paused';
+}
+
+export interface CreditNoteItem {
+  id: number;
+  creditNoteId: number;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  hsnCode?: string | null;
+  quantity: number;
+  unit: string;
+  rate: number;
+  taxRate: number;
+  amount: number;
+}
+
+export interface CreditNote {
+  id: number;
+  /** @nullable */
+  invoiceId?: number | null;
+  creditNoteNumber: string;
+  date: string;
+  /** @nullable */
+  customerName?: string | null;
+  /** @nullable */
+  customerEmail?: string | null;
+  /** @nullable */
+  customerPhone?: string | null;
+  /** @nullable */
+  customerAddress?: string | null;
+  /** @nullable */
+  customerGstin?: string | null;
+  /** @nullable */
+  reason?: string | null;
+  status: string;
+  subtotal: number;
+  taxPercent: number;
+  taxAmount: number;
+  total: number;
+  /** @nullable */
+  notes?: string | null;
+  supplyType: string;
+  items: CreditNoteItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreditNoteListItem {
+  id: number;
+  /** @nullable */
+  invoiceId?: number | null;
+  creditNoteNumber: string;
+  date: string;
+  /** @nullable */
+  customerName?: string | null;
+  status: string;
+  total: number;
+  /** @nullable */
+  reason?: string | null;
+  createdAt: string;
+}
+
+export interface CreateCreditNoteBody {
+  invoiceId?: number;
+  creditNoteNumber: string;
+  date: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  customerGstin?: string;
+  reason?: string;
+  supplyType?: string;
+  taxPercent?: number;
+  notes?: string;
+  items: CreateInvoiceItemBody[];
+}
+
+export interface CustomerStatementPayment {
+  date: string;
+  amount: number;
+  method: string;
+}
+
+export interface CustomerStatementInvoice {
+  id: number;
+  invoiceNumber: string;
+  date: string;
+  /** @nullable */
+  dueDate?: string | null;
+  total: number;
+  paidAmount: number;
+  outstanding: number;
+  status: string;
+  payments: CustomerStatementPayment[];
+}
+
+export interface CustomerStatementSummary {
+  totalInvoiced: number;
+  totalPaid: number;
+  totalOutstanding: number;
+}
+
+export interface CustomerStatementCustomer {
+  name: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  state?: string | null;
+  /** @nullable */
+  gstin?: string | null;
+}
+
+export interface CustomerStatement {
+  customer: CustomerStatementCustomer;
+  /** @nullable */
+  fromDate?: string | null;
+  /** @nullable */
+  toDate?: string | null;
+  invoices: CustomerStatementInvoice[];
+  summary: CustomerStatementSummary;
 }

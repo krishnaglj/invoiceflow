@@ -5,7 +5,16 @@ import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Search, Mail, Phone, Building2, Pencil } from "lucide-react";
+import { Plus, Search, Mail, Phone, Building2, Pencil, Download } from "lucide-react";
+
+function downloadCSV(rows: (string | number | undefined | null)[][], filename: string) {
+  const content = rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([content], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 import { EditCustomerDialog } from "@/components/edit-customer-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
@@ -54,6 +63,21 @@ export default function Customers() {
           <p className="text-muted-foreground mt-1">Manage your client directory.</p>
         </div>
         
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline" className="rounded-xl"
+            onClick={() => {
+              const rows: (string | number | undefined | null)[][] = [
+                ["Name", "Business", "Phone", "Email", "GSTIN", "City", "State"],
+                ...(customers ?? []).map((c) => [
+                  c.name, c.businessName, c.phone, c.email, c.gstin, c.city, c.state,
+                ]),
+              ];
+              downloadCSV(rows, `customers-${new Date().toISOString().split("T")[0]}.csv`);
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" /> Export CSV
+          </Button>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button className="rounded-xl shadow-lg shadow-primary/20 hover-elevate">
@@ -85,6 +109,7 @@ export default function Customers() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="relative max-w-md">

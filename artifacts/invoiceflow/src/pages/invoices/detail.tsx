@@ -3,13 +3,14 @@ import { useParams, useLocation } from "wouter";
 import {
   useGetInvoice, useGetBusinessProfile, useDeleteInvoice,
   useMarkInvoicePaid, useCreatePayment, useDeletePayment,
+  useCreateCreditNoteFromInvoice,
 } from "@workspace/api-client-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/status-badge";
-import { Printer, Share2, Edit, Trash2, CheckCircle, ChevronLeft, Plus, X, Bell } from "lucide-react";
+import { Printer, Share2, Edit, Trash2, CheckCircle, ChevronLeft, Plus, X, Bell, FileX } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -67,6 +68,7 @@ export default function InvoiceDetail() {
   const markPaidMut = useMarkInvoicePaid();
   const createPaymentMut = useCreatePayment();
   const deletePaymentMut = useDeletePayment();
+  const createCNMut = useCreateCreditNoteFromInvoice();
 
   const [payOpen, setPayOpen] = useState(false);
   const [payAmount, setPayAmount] = useState("");
@@ -222,6 +224,17 @@ export default function InvoiceDetail() {
           )}
           <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setLocation(`/invoices/${invoiceId}/edit`)}>
             <Edit className="w-4 h-4 sm:mr-2 shrink-0" /><span className="hidden sm:inline">Edit</span>
+          </Button>
+          <Button
+            variant="outline" size="sm"
+            className="rounded-xl border-purple-200 text-purple-700 hover:bg-purple-50"
+            onClick={() => createCNMut.mutate(invoiceId, {
+              onSuccess: (cn: any) => { toast({ title: "Credit note created" }); setLocation(`/credit-notes/${cn.id}`); },
+              onError: () => toast({ title: "Error creating credit note", variant: "destructive" }),
+            })}
+            disabled={createCNMut.isPending}
+          >
+            <FileX className="w-4 h-4 sm:mr-2 shrink-0" /><span className="hidden sm:inline">Credit Note</span>
           </Button>
           <Button variant="outline" size="sm" className="rounded-xl" onClick={handlePrint}>
             <Printer className="w-4 h-4 sm:mr-2 shrink-0" /><span className="hidden sm:inline">Print</span>
@@ -457,6 +470,20 @@ export default function InvoiceDetail() {
                     {formatCurrency(invoice.status === "partial" ? remaining : invoice.total)}
                   </td>
                 </tr>
+                {(invoice as any).tdsRate > 0 && (
+                  <>
+                    <tr>
+                      <td style={{ ...cellStyle, color: "#92400e" }}>Less: TDS @{(invoice as any).tdsRate}% (u/s 194C/194J)</td>
+                      <td style={{ ...cellStyle, textAlign: "right", color: "#b45309", fontWeight: 600 }}>−{formatCurrency((invoice as any).tdsAmount)}</td>
+                    </tr>
+                    <tr style={{ backgroundColor: "#f0fdf4", WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>
+                      <td style={{ ...cellStyle, fontWeight: 700, fontSize: 13, backgroundColor: "#f0fdf4", WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>Net Payable (after TDS)</td>
+                      <td style={{ ...cellStyle, fontWeight: 800, fontSize: 15, textAlign: "right", color: "#16a34a", backgroundColor: "#f0fdf4", WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>
+                        {formatCurrency(invoice.total - (invoice as any).tdsAmount)}
+                      </td>
+                    </tr>
+                  </>
+                )}
               </tbody>
             </table>
           </div>

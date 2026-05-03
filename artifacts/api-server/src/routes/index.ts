@@ -14,6 +14,7 @@ import purchaseOrdersRouter from "./purchase-orders";
 import stockMovementsRouter from "./stock-movements";
 import inventoryRouter from "./inventory";
 import recurringInvoicesRouter from "./recurring-invoices";
+import creditNotesRouter from "./credit-notes";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(purchaseOrdersRouter);
 router.use(stockMovementsRouter);
 router.use(inventoryRouter);
 router.use(recurringInvoicesRouter);
+router.use(creditNotesRouter);
 
 export default router;

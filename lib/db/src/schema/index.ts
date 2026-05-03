@@ -11,3 +11,4 @@ export * from "./warehouses";
 export * from "./purchaseOrders";
 export * from "./stockMovements";
 export * from "./recurringInvoices";
+export * from "./creditNotes";

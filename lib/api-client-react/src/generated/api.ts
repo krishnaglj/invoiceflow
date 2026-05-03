@@ -87,6 +87,10 @@ import type {
   RecurringInvoiceItemData,
   CreateRecurringInvoiceBody,
   UpdateRecurringInvoiceBody,
+  CreditNote,
+  CreditNoteListItem,
+  CreateCreditNoteBody,
+  CustomerStatement,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -2703,5 +2707,103 @@ export const useRunRecurringInvoice = <
   return useMutation({
     mutationFn: (id) => runRecurringInvoice(id, requestOptions),
     ...mutationOptions,
+  });
+};
+
+// ── Credit Notes ──────────────────────────────────────────────────────────────
+
+export const listCreditNotes = async (options?: RequestInit): Promise<CreditNoteListItem[]> =>
+  customFetch<CreditNoteListItem[]>(`/api/credit-notes`, { ...options });
+
+export const useListCreditNotes = <TError = ErrorType<ErrorResponse>>(
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listCreditNotes>>, TError>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<CreditNoteListItem[], TError> => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  return useQuery({ queryKey: ["/api/credit-notes"], queryFn: () => listCreditNotes(requestOptions), ...queryOptions });
+};
+
+export const getCreditNote = async (id: number, options?: RequestInit): Promise<CreditNote> =>
+  customFetch<CreditNote>(`/api/credit-notes/${id}`, { ...options });
+
+export const useGetCreditNote = <TError = ErrorType<ErrorResponse>>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getCreditNote>>, TError>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<CreditNote, TError> => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  return useQuery({ queryKey: [`/api/credit-notes/${id}`], queryFn: () => getCreditNote(id, requestOptions), ...queryOptions });
+};
+
+export const createCreditNote = async (data: CreateCreditNoteBody, options?: RequestInit): Promise<CreditNote> =>
+  customFetch<CreditNote>(`/api/credit-notes`, { ...options, method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+
+export const useCreateCreditNote = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof createCreditNote>>, TError, CreateCreditNoteBody, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseMutationResult<Awaited<ReturnType<typeof createCreditNote>>, TError, CreateCreditNoteBody, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  return useMutation({ mutationFn: (data) => createCreditNote(data, requestOptions), ...mutationOptions });
+};
+
+export const createCreditNoteFromInvoice = async (invoiceId: number, options?: RequestInit): Promise<CreditNote> =>
+  customFetch<CreditNote>(`/api/credit-notes/from-invoice/${invoiceId}`, { ...options, method: "POST" });
+
+export const useCreateCreditNoteFromInvoice = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof createCreditNoteFromInvoice>>, TError, number, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseMutationResult<Awaited<ReturnType<typeof createCreditNoteFromInvoice>>, TError, number, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  return useMutation({ mutationFn: (id) => createCreditNoteFromInvoice(id, requestOptions), ...mutationOptions });
+};
+
+export const deleteCreditNote = async (id: number, options?: RequestInit): Promise<void> =>
+  customFetch<void>(`/api/credit-notes/${id}`, { ...options, method: "DELETE" });
+
+export const useDeleteCreditNote = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof deleteCreditNote>>, TError, number, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseMutationResult<Awaited<ReturnType<typeof deleteCreditNote>>, TError, number, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  return useMutation({ mutationFn: (id) => deleteCreditNote(id, requestOptions), ...mutationOptions });
+};
+
+// ── Customer Statement ────────────────────────────────────────────────────────
+
+export const getCustomerStatement = async (
+  id: number,
+  params?: { from?: string; to?: string },
+  options?: RequestInit,
+): Promise<CustomerStatement> => {
+  const qs = new URLSearchParams();
+  if (params?.from) qs.set("from", params.from);
+  if (params?.to) qs.set("to", params.to);
+  const query = qs.toString() ? `?${qs.toString()}` : "";
+  return customFetch<CustomerStatement>(`/api/customers/${id}/statement${query}`, { ...options });
+};
+
+export const useGetCustomerStatement = <TError = ErrorType<ErrorResponse>>(
+  id: number,
+  params?: { from?: string; to?: string },
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getCustomerStatement>>, TError>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<CustomerStatement, TError> => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  return useQuery({
+    queryKey: [`/api/customers/${id}/statement`, params],
+    queryFn: () => getCustomerStatement(id, params, requestOptions),
+    ...queryOptions,
   });
 };

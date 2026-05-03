@@ -239,6 +239,9 @@ router.post("/invoices", requireAuth, async (req, res): Promise<void> => {
     invoiceData.taxPercent ?? 0
   );
 
+  const tdsRate = invoiceData.tdsRate ?? 0;
+  const tdsAmount = (tdsRate / 100) * (total - taxAmount);
+
   const [invoice] = await db
     .insert(invoicesTable)
     .values({
@@ -247,6 +250,8 @@ router.post("/invoices", requireAuth, async (req, res): Promise<void> => {
       subtotal,
       taxAmount,
       total,
+      tdsRate,
+      tdsAmount,
       discountType: invoiceData.discountType ?? "percent",
       discountValue: invoiceData.discountValue ?? 0,
       taxPercent: invoiceData.taxPercent ?? 0,
@@ -331,10 +336,12 @@ router.patch("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
       invoiceData.discountValue ?? existing.discountValue,
       invoiceData.taxPercent ?? existing.taxPercent
     );
+    const updTdsRate = invoiceData.tdsRate ?? existing.tdsRate ?? 0;
+    const updTdsAmount = (updTdsRate / 100) * (total - taxAmount);
 
     await db
       .update(invoicesTable)
-      .set({ ...invoiceData, subtotal, taxAmount, total })
+      .set({ ...invoiceData, subtotal, taxAmount, total, tdsRate: updTdsRate, tdsAmount: updTdsAmount })
       .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.userId)));
 
     await db
@@ -358,9 +365,17 @@ router.patch("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
       );
     }
   } else {
+    let updateData: Record<string, unknown> = { ...invoiceData };
+    if (invoiceData.tdsRate !== undefined) {
+      const [cur] = await db.select({ total: invoicesTable.total, taxAmount: invoicesTable.taxAmount })
+        .from(invoicesTable).where(eq(invoicesTable.id, params.data.id));
+      if (cur) {
+        updateData.tdsAmount = (invoiceData.tdsRate / 100) * (cur.total - cur.taxAmount);
+      }
+    }
     await db
       .update(invoicesTable)
-      .set(invoiceData)
+      .set(updateData as any)
       .where(and(eq(invoicesTable.id, params.data.id), eq(invoicesTable.userId, req.userId)));
   }
 

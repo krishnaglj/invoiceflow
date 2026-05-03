@@ -31,6 +31,9 @@ import PurchaseOrderDetail from "./pages/purchase-orders/detail";
 import InventoryOverview from "./pages/inventory";
 import StockMovements from "./pages/inventory/movements";
 import RecurringInvoices from "./pages/recurring";
+import CreditNotesList from "./pages/credit-notes";
+import CreditNoteDetail from "./pages/credit-notes/detail";
+import CustomerStatement from "./pages/customers/statement";
 
 import { AuthGuard } from "./components/auth-guard";
 import { AppLayout } from "./components/layout";
@@ -140,6 +143,9 @@ function Router() {
       <Route path="/inventory/movements"><ProtectedRoute component={StockMovements} /></Route>
 
       <Route path="/recurring"><ProtectedRoute component={RecurringInvoices} /></Route>
+      <Route path="/credit-notes"><ProtectedRoute component={CreditNotesList} /></Route>
+      <Route path="/credit-notes/:id"><ProtectedRoute component={CreditNoteDetail} /></Route>
+      <Route path="/customers/:id/statement"><ProtectedRoute component={CustomerStatement} /></Route>
 
       <Route component={NotFound} />
     </Switch>

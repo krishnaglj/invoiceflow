@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
 import { EditCustomerDialog } from "@/components/edit-customer-dialog";
-import { Phone, Mail, Building, MapPin, ReceiptText, ArrowUpRight, Clock, Pencil } from "lucide-react";
+import { Phone, Mail, Building, MapPin, ReceiptText, ArrowUpRight, Clock, Pencil, FileText } from "lucide-react";
 import { Link } from "wouter";
 
 export default function CustomerDetail() {
@@ -28,9 +28,16 @@ export default function CustomerDetail() {
             {customer.businessName && <p className="text-muted-foreground flex items-center gap-1"><Building className="w-4 h-4" /> {customer.businessName}</p>}
           </div>
         </div>
-        <Button variant="outline" className="rounded-xl shrink-0" onClick={() => setEditOpen(true)}>
-          <Pencil className="w-4 h-4 mr-2" /> Edit
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link href={`/customers/${id}/statement`}>
+            <Button variant="outline" className="rounded-xl">
+              <FileText className="w-4 h-4 mr-2" /> Statement
+            </Button>
+          </Link>
+          <Button variant="outline" className="rounded-xl" onClick={() => setEditOpen(true)}>
+            <Pencil className="w-4 h-4 mr-2" /> Edit
+          </Button>
+        </div>
       </div>
 
       <EditCustomerDialog customer={customer} open={editOpen} onOpenChange={setEditOpen} />

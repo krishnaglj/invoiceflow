@@ -361,6 +361,7 @@ export const CreateInvoiceBody = zod.object({
   discountType: zod.enum(["percent", "flat"]).optional(),
   discountValue: zod.number().optional(),
   taxPercent: zod.number().optional(),
+  tdsRate: zod.number().optional(),
   notes: zod.string().optional(),
   paymentTerms: zod.string().optional(),
   showBankDetails: zod.boolean().optional(),
@@ -406,6 +407,8 @@ export const GetInvoiceResponse = zod.object({
   taxAmount: zod.number(),
   total: zod.number(),
   paidAmount: zod.number(),
+  tdsRate: zod.number(),
+  tdsAmount: zod.number(),
   notes: zod.string().nullish(),
   paymentTerms: zod.string().nullish(),
   showBankDetails: zod.boolean(),
@@ -450,6 +453,7 @@ export const UpdateInvoiceBody = zod.object({
   discountType: zod.enum(["percent", "flat"]).optional(),
   discountValue: zod.number().optional(),
   taxPercent: zod.number().optional(),
+  tdsRate: zod.number().optional(),
   notes: zod.string().optional(),
   paymentTerms: zod.string().optional(),
   showBankDetails: zod.boolean().optional(),
@@ -1232,3 +1236,47 @@ export type RecurringInvoiceItem = zod.infer<typeof RecurringInvoiceItem>;
 export type RecurringInvoice = zod.infer<typeof RecurringInvoice>;
 export type CreateRecurringInvoiceBody = zod.infer<typeof CreateRecurringInvoiceBody>;
 export type UpdateRecurringInvoiceBody = zod.infer<typeof UpdateRecurringInvoiceBody>;
+
+// ── Credit Notes ──────────────────────────────────────────────────────────────
+
+export const CreditNoteItemInput = zod.object({
+  name: zod.string(),
+  description: zod.string().optional(),
+  hsnCode: zod.string().optional(),
+  quantity: zod.number(),
+  unit: zod.string().default("pcs"),
+  rate: zod.number(),
+  taxRate: zod.number().optional().default(0),
+  amount: zod.number(),
+});
+
+export const CreateCreditNoteBody = zod.object({
+  invoiceId: zod.number().optional(),
+  creditNoteNumber: zod.string(),
+  date: zod.string(),
+  customerName: zod.string().optional(),
+  customerEmail: zod.string().optional(),
+  customerPhone: zod.string().optional(),
+  customerAddress: zod.string().optional(),
+  customerGstin: zod.string().optional(),
+  reason: zod.string().optional(),
+  supplyType: zod.enum(["intra", "inter"]).optional().default("intra"),
+  taxPercent: zod.number().optional().default(0),
+  notes: zod.string().optional(),
+  items: zod.array(CreditNoteItemInput),
+});
+
+export const UpdateCreditNoteBody = zod.object({
+  date: zod.string().optional(),
+  customerName: zod.string().optional(),
+  reason: zod.string().optional(),
+  status: zod.enum(["draft", "issued"]).optional(),
+  notes: zod.string().optional(),
+  taxPercent: zod.number().optional(),
+  supplyType: zod.enum(["intra", "inter"]).optional(),
+  items: zod.array(CreditNoteItemInput).optional(),
+});
+
+export type CreditNoteItemInput = zod.infer<typeof CreditNoteItemInput>;
+export type CreateCreditNoteBody = zod.infer<typeof CreateCreditNoteBody>;
+export type UpdateCreditNoteBody = zod.infer<typeof UpdateCreditNoteBody>;

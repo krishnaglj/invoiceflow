@@ -5,7 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Receipt, Trash2, TrendingDown } from "lucide-react";
+import { Plus, Search, Receipt, Trash2, TrendingDown, Download } from "lucide-react";
+
+function downloadCSV(rows: (string | number | undefined | null)[][], filename: string) {
+  const content = rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([content], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -93,6 +102,22 @@ export default function Expenses() {
           <h1 className="text-3xl font-display font-bold">Expenses</h1>
           <p className="text-muted-foreground mt-1">Track your business spending.</p>
         </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline" className="rounded-xl"
+            onClick={() => {
+              const rows: (string | number | undefined | null)[][] = [
+                ["Date", "Category", "Description", "Vendor", "Payment Method", "Reference", "Amount"],
+                ...(expenses ?? []).map((e) => [
+                  e.date, e.category, e.description, e.vendor,
+                  e.paymentMethod, e.reference, e.amount,
+                ]),
+              ];
+              downloadCSV(rows, `expenses-${new Date().toISOString().split("T")[0]}.csv`);
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" /> Export CSV
+          </Button>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button className="rounded-xl shadow-lg shadow-primary/20 hover-elevate">
@@ -170,6 +195,7 @@ export default function Expenses() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -46,20 +46,23 @@ artifacts-monorepo/
 - `/` — Landing page (marketing)
 - `/onboarding` — 3-step business profile setup (redirected to automatically if no profile exists after login)
 - `/dashboard` — Stats, revenue chart, recent invoices, top customers
-- `/invoices` — Invoice list with status filters, search, **bulk operations** (Select mode: mark paid/sent/delete), **WhatsApp Remind** quick-link on unpaid cards
-- `/invoices/new` — Create invoice with dynamic line items, HSN/SAC per item, GST rate per item, placeOfSupply, supplyType (CGST/SGST vs IGST)
-- `/invoices/:id` — Invoice preview with Print/Share/Edit/Mark Paid, **WhatsApp Reminder button**, payment recording UI, IGST/CGST display, payment history panel
+- `/invoices` — Invoice list with status filters, search, **bulk operations** (Select mode: mark paid/sent/delete), **WhatsApp Remind** quick-link on unpaid cards, **Export CSV** button
+- `/invoices/new` — Create invoice with dynamic line items, HSN/SAC per item, GST rate per item, placeOfSupply, supplyType (CGST/SGST vs IGST), **TDS rate field** (shows Less: TDS + Net Payable when set)
+- `/invoices/:id` — Invoice preview with Print/Share/Edit/Mark Paid, **WhatsApp Reminder button**, payment recording UI, IGST/CGST display, payment history panel, **TDS deduction rows in totals**, **Issue Credit Note button**
 - `/invoices/:id/edit` — Edit invoice
 - `/estimates` — Estimates list with status filters (draft/sent/accepted/rejected/converted)
 - `/estimates/new` — Create estimate (mirrors invoice form)
 - `/estimates/:id` — Estimate detail with Convert-to-Invoice button
 - `/estimates/:id/edit` — Edit estimate
-- `/expenses` — Expenses list with category/date filters and summary cards
+- `/expenses` — Expenses list with category/date filters and summary cards, **Export CSV** button
 - `/expenses/new` — Log expense (date, category, vendor, amount, method)
 - `/reports` — GST Report (GSTR-1 style by slab, month/year filter) + P&L (6-month bar chart, expense breakdown) + **Aging Report** (outstanding buckets: Current, 1-30, 31-60, 61-90, 90+ days)
 - `/recurring` — **Recurring Invoices**: set up auto-billing schedules (weekly/monthly/quarterly/yearly), Run Now, Pause/Resume, edit template
-- `/customers` — Customer directory
-- `/customers/:id` — Customer detail with invoice history
+- `/credit-notes` — **Credit Notes** list; issue credits against invoices; print view
+- `/credit-notes/:id` — Credit note detail/print with purple branding; links back to original invoice
+- `/customers` — Customer directory with **Export CSV** button
+- `/customers/:id` — Customer detail with invoice history and **Statement** button
+- `/customers/:id/statement` — **Customer Account Statement**: printable date-range filtered statement with payment history + summary totals
 - `/products` — Product/service library with HSN code and GST rate fields
 - `/settings` — Business profile and invoice settings
 
@@ -83,12 +86,14 @@ artifacts-monorepo/
 - `business_profiles` — Business info, bank details, invoice settings (scoped by userId)
 - `customers` — Customer directory (scoped by userId)
 - `products` — Product/service library with default rates, hsnCode, taxRate (scoped by userId)
-- `invoices` — Invoice records with computed totals, placeOfSupply, supplyType, paidAmount (scoped by userId)
+- `invoices` — Invoice records with computed totals, placeOfSupply, supplyType, paidAmount, **tdsRate, tdsAmount** (scoped by userId)
 - `invoice_items` — Line items per invoice with hsnCode, taxRate
 - `estimates` — Estimate records mirroring invoice structure with status (draft/sent/accepted/rejected/converted), convertedToInvoiceId
 - `estimate_items` — Line items per estimate with hsnCode, taxRate
 - `expenses` — Expense records (date, category, amount, vendor, paymentMethod, reference, receiptUrl)
 - `payments` — Payment records per invoice (amount, date, method, reference, notes); auto-recalculates invoice paidAmount and status (partial/paid)
+- `credit_notes` — Credit note records (scoped by userId); linked to optional invoiceId; status: draft/issued
+- `credit_note_items` — Line items per credit note with hsnCode, taxRate
 
 ### API Endpoints (under /api)
 - `GET/POST/PATCH /business-profile`
@@ -107,12 +112,19 @@ artifacts-monorepo/
 - `GET /dashboard/stats` — now includes totalExpenses + netProfit
 - `GET /dashboard/monthly-revenue`
 - `GET /dashboard/top-customers`
+- `GET /customers/:id/statement?from=&to=` — customer account statement with invoices + payments
+- `GET/POST /credit-notes`, `GET/PATCH/DELETE /credit-notes/:id`
+- `POST /credit-notes/from-invoice/:invoiceId` — creates draft credit note pre-filled from invoice
 
 ### Key Implementation Notes
 - supplyType `intra` → CGST + SGST split; `inter` → IGST only
 - Payments auto-recalc invoice `paidAmount`; status set to `partial` if paidAmount < total, `paid` if equal
 - `UpdateBusinessProfileResponse` is an alias for `GetBusinessProfileResponse` in api-zod (not auto-generated, added manually)
 - api-zod schemas are manually maintained (not regenerated from OpenAPI) — edit `lib/api-zod/src/generated/api.ts` directly
+- TDS (Tax Deducted at Source): `tdsRate` stored on invoice; `tdsAmount = (tdsRate/100) * taxableAmount`; displayed as deduction row below Total on both form sidebar and print detail
+- Credit note "from invoice" shortcut copies all customer + item data automatically; assigns CN-XXXX number
+- Customer statement endpoint filters by date and returns per-invoice payment drill-down + summary totals
+- CSV export is fully client-side using Blob + URL.createObjectURL — no server involvement
 
 ## TypeScript & Composite Projects
 

@@ -61,6 +61,7 @@ const invoiceSchema = z.object({
   discountType: z.enum(["percent", "flat"]).default("flat"),
   discountValue: z.coerce.number().default(0),
   taxPercent: z.coerce.number().default(0),
+  tdsRate: z.coerce.number().default(0),
   notes: z.string().optional(),
   paymentTerms: z.string().optional(),
   showBankDetails: z.boolean().default(true),
@@ -110,6 +111,7 @@ export default function InvoiceForm() {
   const watchDiscountType = form.watch("discountType");
   const watchDiscountValue = form.watch("discountValue");
   const watchTax = form.watch("taxPercent");
+  const watchTdsRate = form.watch("tdsRate");
   const watchSupplyType = form.watch("supplyType");
 
   const calc = useInvoiceCalculations(
@@ -137,6 +139,7 @@ export default function InvoiceForm() {
         discountType: (existingInvoice.discountType as "percent" | "flat") ?? "flat",
         discountValue: existingInvoice.discountValue ?? 0,
         taxPercent: existingInvoice.taxPercent ?? 0,
+        tdsRate: (existingInvoice as any).tdsRate ?? 0,
         notes: sanitize(existingInvoice.notes) as string | undefined,
         paymentTerms: sanitize(existingInvoice.paymentTerms) as string | undefined,
         showBankDetails: existingInvoice.showBankDetails ?? true,
@@ -481,7 +484,7 @@ export default function InvoiceForm() {
                 )}
 
                 <div className="flex items-center justify-between gap-4">
-                  <Label className="shrink-0 text-muted-foreground">Tax %</Label>
+                  <Label className="shrink-0 text-muted-foreground">GST %</Label>
                   <Input type="number" step="0.1" {...form.register("taxPercent")} className="w-24 h-9 text-right" />
                 </div>
 
@@ -505,10 +508,31 @@ export default function InvoiceForm() {
                   )
                 )}
 
+                <div className="flex items-center justify-between gap-4">
+                  <Label className="shrink-0 text-muted-foreground text-xs">TDS % (if applicable)</Label>
+                  <Input type="number" step="0.01" {...form.register("tdsRate")} className="w-24 h-9 text-right" placeholder="0" />
+                </div>
+
                 <div className="pt-4 border-t flex justify-between items-center">
                   <span className="font-bold text-lg">Total</span>
                   <span className="font-black text-2xl text-primary">{formatCurrency(calc.total)}</span>
                 </div>
+
+                {(watchTdsRate || 0) > 0 && (() => {
+                  const tdsAmt = ((watchTdsRate || 0) / 100) * (calc.total - calc.taxAmount);
+                  return (
+                    <>
+                      <div className="flex justify-between items-center text-amber-700 font-medium text-sm">
+                        <span>Less: TDS ({watchTdsRate}%)</span>
+                        <span>−{formatCurrency(tdsAmt)}</span>
+                      </div>
+                      <div className="flex justify-between items-center border-t pt-2">
+                        <span className="font-bold">Net Payable</span>
+                        <span className="font-black text-xl text-emerald-600">{formatCurrency(calc.total - tdsAmt)}</span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               <hr className="my-6" />

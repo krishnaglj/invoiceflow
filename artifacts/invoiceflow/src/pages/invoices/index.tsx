@@ -11,7 +11,16 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/status-badge";
-import { Plus, Search, FileX, CheckSquare, Square, Trash2, CheckCircle, Send, X, MessageCircle } from "lucide-react";
+import { Plus, Search, FileX, CheckSquare, Square, Trash2, CheckCircle, Send, X, MessageCircle, Download } from "lucide-react";
+
+function downloadCSV(rows: (string | number | undefined | null)[][], filename: string) {
+  const content = rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([content], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -95,6 +104,22 @@ export default function InvoicesList() {
           <p className="text-muted-foreground mt-1">Manage and track your billing.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline" className="rounded-xl h-11"
+            onClick={() => {
+              const rows: (string | number | undefined | null)[][] = [
+                ["Invoice #", "Customer", "Date", "Due Date", "Status", "Subtotal", "Tax", "Total", "Paid", "Outstanding"],
+                ...(invoices ?? []).map((inv) => [
+                  inv.invoiceNumber, inv.customerName, inv.invoiceDate, inv.dueDate,
+                  inv.status, inv.subtotal, inv.taxAmount, inv.total, inv.paidAmount,
+                  inv.total - (inv.paidAmount ?? 0),
+                ]),
+              ];
+              downloadCSV(rows, `invoices-${new Date().toISOString().split("T")[0]}.csv`);
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" /> Export CSV
+          </Button>
           <Button
             variant={bulkMode ? "default" : "outline"}
             className="rounded-xl h-11"
