@@ -109,13 +109,13 @@ export function CustomerSearch({ customers, selectedId, onSelect, onClear, onCre
                       setOpen(false);
                       setQuery("");
                     }}
-                    className="flex items-center gap-3 px-3 py-2.5 cursor-pointer rounded-lg mx-1"
+                    className="group flex items-center gap-3 px-3 py-2.5 cursor-pointer rounded-lg mx-1"
                   >
                     <div className={cn(
                       "w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
                       selectedId === customer.id
                         ? "bg-primary text-primary-foreground"
-                        : "bg-primary/10 text-primary"
+                        : "bg-primary/10 text-primary group-data-[selected=true]:bg-primary-foreground/20 group-data-[selected=true]:text-primary-foreground"
                     )}>
                       {customer.name.charAt(0).toUpperCase()}
                     </div>
@@ -124,19 +124,19 @@ export function CustomerSearch({ customers, selectedId, onSelect, onClear, onCre
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm truncate">{customer.name}</span>
                         {customer.businessName && (
-                          <span className="text-xs text-muted-foreground truncate hidden sm:block">
+                          <span className="text-xs text-muted-foreground truncate hidden sm:block group-data-[selected=true]:text-primary-foreground/70">
                             · {customer.businessName}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                         {customer.phone && (
-                          <span className="flex items-center gap-1 text-xs text-foreground/80">
+                          <span className="flex items-center gap-1 text-xs text-foreground/80 group-data-[selected=true]:text-primary-foreground">
                             <Phone className="w-3 h-3" /> {customer.phone}
                           </span>
                         )}
                         {customer.email && (
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground/70">
                             <Mail className="w-3 h-3" /> {customer.email}
                           </span>
                         )}
@@ -144,7 +144,7 @@ export function CustomerSearch({ customers, selectedId, onSelect, onClear, onCre
                     </div>
 
                     {selectedId === customer.id && (
-                      <Check className="h-4 w-4 text-primary shrink-0" />
+                      <Check className="h-4 w-4 text-primary shrink-0 group-data-[selected=true]:text-primary-foreground" />
                     )}
                   </CommandItem>
                 ))}
