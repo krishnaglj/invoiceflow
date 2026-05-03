@@ -205,14 +205,14 @@ export default function InvoiceForm() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full pb-32">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h1 className="text-3xl font-display font-bold">{isEditing ? "Edit Invoice" : "New Invoice"}</h1>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="rounded-xl bg-card" onClick={form.handleSubmit((d) => onSubmit(d, "draft"))} disabled={createMut.isPending || updateMut.isPending}>
-            <Save className="w-4 h-4 mr-2" /> Save Draft
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <h1 className="text-2xl sm:text-3xl font-display font-bold">{isEditing ? "Edit Invoice" : "New Invoice"}</h1>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="rounded-xl bg-card flex-1 sm:flex-none" onClick={form.handleSubmit((d) => onSubmit(d, "draft"))} disabled={createMut.isPending || updateMut.isPending}>
+            <Save className="w-4 h-4 mr-1.5" /> Draft
           </Button>
-          <Button className="rounded-xl shadow-lg shadow-primary/20" onClick={form.handleSubmit((d) => onSubmit(d, "sent"))} disabled={createMut.isPending || updateMut.isPending}>
-            <Send className="w-4 h-4 mr-2" /> Save & Mark Sent
+          <Button className="rounded-xl shadow-lg shadow-primary/20 flex-1 sm:flex-none" onClick={form.handleSubmit((d) => onSubmit(d, "sent"))} disabled={createMut.isPending || updateMut.isPending}>
+            <Send className="w-4 h-4 mr-1.5" /> Save & Send
           </Button>
         </div>
       </div>
@@ -254,28 +254,30 @@ export default function InvoiceForm() {
                 <div className="space-y-4 border p-4 rounded-xl bg-muted/20">
                   <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Invoice Details</h3>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Label className="w-28 shrink-0 text-xs">Invoice No.</Label>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Invoice No.</Label>
                       <Input {...form.register("invoiceNumber")} className="bg-background font-mono" />
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Label className="w-28 shrink-0 text-xs">Date</Label>
-                      <Input type="date" {...form.register("invoiceDate")} className="bg-background" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Date</Label>
+                        <Input type="date" {...form.register("invoiceDate")} className="bg-background" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Due Date</Label>
+                        <Input type="date" {...form.register("dueDate")} className="bg-background" />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Label className="w-28 shrink-0 text-xs">Due Date</Label>
-                      <Input type="date" {...form.register("dueDate")} className="bg-background" />
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Label className="w-28 shrink-0 text-xs">Place of Supply</Label>
-                      <select className="flex-1 border rounded-xl px-3 py-2 text-sm bg-background" {...form.register("placeOfSupply")}>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Place of Supply</Label>
+                      <select className="w-full border rounded-xl px-3 py-2 text-sm bg-background" {...form.register("placeOfSupply")}>
                         <option value="">Select state</option>
                         {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Label className="w-28 shrink-0 text-xs">Supply Type</Label>
-                      <select className="flex-1 border rounded-xl px-3 py-2 text-sm bg-background" {...form.register("supplyType")}>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Supply Type</Label>
+                      <select className="w-full border rounded-xl px-3 py-2 text-sm bg-background" {...form.register("supplyType")}>
                         <option value="intra">Intra-state (CGST+SGST)</option>
                         <option value="inter">Inter-state (IGST)</option>
                       </select>
