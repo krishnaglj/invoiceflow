@@ -6,7 +6,7 @@ import * as z from "zod";
 import {
   useGetInvoice, useCreateInvoice, useUpdateInvoice,
   useGetNextInvoiceNumber, useListCustomers, useGetBusinessProfile, useListProducts,
-  useCreateCustomer,
+  useCreateCustomer, useCreateProduct,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, Save, Send, UserPlus } from "lucide-react";
+import { Plus, Trash2, Save, Send, UserPlus, PackagePlus } from "lucide-react";
 import { CustomerSearch } from "@/components/customer-search";
 import { QuickAddCustomerDialog } from "@/components/quick-add-customer-dialog";
 import { QuickAddProductDialog } from "@/components/quick-add-product-dialog";
@@ -84,6 +84,8 @@ export default function InvoiceForm() {
   const createMut = useCreateInvoice();
   const updateMut = useUpdateInvoice();
   const saveCustomerMut = useCreateCustomer();
+  const saveProductMut = useCreateProduct();
+  const [itemFromLibrary, setItemFromLibrary] = useState<Set<number>>(new Set());
 
   const [quickCustomer, setQuickCustomer] = useState<{ open: boolean; name: string }>({ open: false, name: "" });
   const [quickProduct, setQuickProduct] = useState<{ open: boolean; itemIndex: number }>({ open: false, itemIndex: 0 });
@@ -202,7 +204,33 @@ export default function InvoiceForm() {
       form.setValue(`items.${index}.unit`, p.unit);
       if (p.hsnCode) form.setValue(`items.${index}.hsnCode`, p.hsnCode);
       if (p.taxRate) form.setValue(`items.${index}.taxRate`, p.taxRate);
+      setItemFromLibrary((prev) => new Set(prev).add(index));
     }
+  };
+
+  const handleSaveAsProduct = (index: number) => {
+    const name = form.getValues(`items.${index}.name`).trim();
+    if (!name) return;
+    saveProductMut.mutate(
+      { data: {
+        name,
+        description: form.getValues(`items.${index}.description`) || undefined,
+        defaultRate: form.getValues(`items.${index}.rate`) || 0,
+        unit: form.getValues(`items.${index}.unit`) || "pcs",
+        hsnCode: form.getValues(`items.${index}.hsnCode`) || undefined,
+        taxRate: form.getValues(`items.${index}.taxRate`) || 0,
+      }},
+      {
+        onSuccess: (p) => {
+          setItemFromLibrary((prev) => new Set(prev).add(index));
+          queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+          toast({ title: "Product saved!", description: `${p.name} added to your product library.` });
+        },
+        onError: () => {
+          toast({ title: "Failed to save product", variant: "destructive" });
+        },
+      }
+    );
   };
 
   const onSubmit = (data: z.infer<typeof invoiceSchema>, action: "draft" | "sent") => {
@@ -358,6 +386,19 @@ export default function InvoiceForm() {
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
+                    {!itemFromLibrary.has(index) && (watchItems[index]?.name?.trim().length ?? 0) >= 2 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full rounded-xl border-primary/40 text-primary hover:bg-primary/5"
+                        onClick={() => handleSaveAsProduct(index)}
+                        disabled={saveProductMut.isPending}
+                      >
+                        <PackagePlus className="w-3.5 h-3.5 mr-2" />
+                        {saveProductMut.isPending ? "Saving..." : "Save as Product / Service"}
+                      </Button>
+                    )}
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <div className="space-y-1">
