@@ -6,6 +6,7 @@ import * as z from "zod";
 import {
   useGetInvoice, useCreateInvoice, useUpdateInvoice,
   useGetNextInvoiceNumber, useListCustomers, useGetBusinessProfile, useListProducts,
+  useCreateCustomer,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, Save, Send } from "lucide-react";
+import { Plus, Trash2, Save, Send, UserPlus } from "lucide-react";
 import { CustomerSearch } from "@/components/customer-search";
 import { QuickAddCustomerDialog } from "@/components/quick-add-customer-dialog";
 import { QuickAddProductDialog } from "@/components/quick-add-product-dialog";
@@ -82,6 +83,7 @@ export default function InvoiceForm() {
 
   const createMut = useCreateInvoice();
   const updateMut = useUpdateInvoice();
+  const saveCustomerMut = useCreateCustomer();
 
   const [quickCustomer, setQuickCustomer] = useState<{ open: boolean; name: string }>({ open: false, name: "" });
   const [quickProduct, setQuickProduct] = useState<{ open: boolean; itemIndex: number }>({ open: false, itemIndex: 0 });
@@ -154,6 +156,30 @@ export default function InvoiceForm() {
       form.setValue("paymentTerms", profile.defaultPaymentTerms || "");
     }
   }, [isEditing, existingInvoice, nextNum, profile]);
+
+  const handleSaveAsCustomer = () => {
+    const name = form.getValues("customerName").trim();
+    if (!name) return;
+    saveCustomerMut.mutate(
+      { data: {
+        name,
+        phone: form.getValues("customerPhone") || "",
+        email: form.getValues("customerEmail") || undefined,
+        gstin: form.getValues("customerGstin") || undefined,
+        address: form.getValues("customerAddress") || undefined,
+      }},
+      {
+        onSuccess: (c) => {
+          form.setValue("customerId", c.id);
+          queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+          toast({ title: "Customer saved!", description: `${c.name} added to your customers.` });
+        },
+        onError: () => {
+          toast({ title: "Failed to save customer", variant: "destructive" });
+        },
+      }
+    );
+  };
 
   const handleCustomerSelect = (custId: string) => {
     const c = customers?.find((c) => c.id.toString() === custId);
@@ -251,6 +277,19 @@ export default function InvoiceForm() {
                     <Input {...form.register("customerPhone")} placeholder="Phone" className="bg-background" />
                     <Input {...form.register("customerGstin")} placeholder="GSTIN (optional)" className="bg-background text-sm" />
                     <Textarea {...form.register("customerAddress")} placeholder="Address" className="bg-background resize-none h-16" />
+                    {!form.watch("customerId") && form.watch("customerName")?.trim().length >= 2 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full rounded-xl border-primary/40 text-primary hover:bg-primary/5"
+                        onClick={handleSaveAsCustomer}
+                        disabled={saveCustomerMut.isPending}
+                      >
+                        <UserPlus className="w-3.5 h-3.5 mr-2" />
+                        {saveCustomerMut.isPending ? "Saving..." : "Save as Customer"}
+                      </Button>
+                    )}
                   </div>
                 </div>
 
