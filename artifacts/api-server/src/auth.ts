@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db, authUser, authSession, authAccount, authVerification } from "@workspace/db";
+import { sendPasswordResetEmail } from "./lib/email";
 
 const baseURL =
   process.env.BETTER_AUTH_URL ||
@@ -43,13 +44,14 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
+    sendResetPassword: async ({ user, url }) => {
+      await sendPasswordResetEmail(user.email, user.name, url);
+    },
   },
   socialProviders: googleConfig,
   trustedOrigins,
   advanced: {
     defaultCookieAttributes: {
-      // In production, frontend+API are on the same domain → use "lax" (more secure)
-      // In Replit dev, they are cross-origin via proxy → use "none" (requires secure:true)
       sameSite: process.env.NODE_ENV === "production" ? "lax" : "none",
       secure: true,
     },

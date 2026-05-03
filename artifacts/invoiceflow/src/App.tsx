@@ -8,6 +8,8 @@ import NotFound from "@/pages/not-found";
 import Landing from "./pages/landing";
 import SignInPage from "./pages/sign-in";
 import SignUpPage from "./pages/sign-up";
+import ForgotPasswordPage from "./pages/forgot-password";
+import ResetPasswordPage from "./pages/reset-password";
 import Onboarding from "./pages/onboarding";
 import Dashboard from "./pages/dashboard";
 import Customers from "./pages/customers";
@@ -112,6 +114,8 @@ function Router() {
       <Route path="/" component={HomeRedirect} />
       <Route path="/sign-in" component={SignInPage} />
       <Route path="/sign-up" component={SignUpPage} />
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
 
       <Route path="/onboarding" component={OnboardingRoute} />
 

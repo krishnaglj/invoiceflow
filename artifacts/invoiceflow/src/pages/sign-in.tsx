@@ -138,6 +138,12 @@ export default function SignInPage() {
               )}
             </div>
 
+            <div className="flex justify-end">
+              <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+
             <Button type="submit" className="w-full h-11 font-semibold" disabled={isLoading}>
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Sign In
