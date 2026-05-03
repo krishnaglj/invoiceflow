@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IndianRupee, Loader2, ArrowLeft, MailCheck } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { requestPasswordReset } from "@/lib/auth-client";
 import { useToast } from "@/hooks/use-toast";
 
 const schema = z.object({
@@ -29,10 +29,10 @@ export default function ForgotPasswordPage() {
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
-      const result = await authClient.forgetPassword({
-        email: data.email,
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      const result = await requestPasswordReset(
+        data.email,
+        `${window.location.origin}/reset-password`,
+      );
       if (result?.error) {
         const msg = result.error.message ?? "";
         const isGoogleAccount =

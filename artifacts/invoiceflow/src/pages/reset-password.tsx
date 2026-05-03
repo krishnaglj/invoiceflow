@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IndianRupee, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { resetPassword } from "@/lib/auth-client";
 import { useToast } from "@/hooks/use-toast";
 
 const schema = z
@@ -51,10 +51,7 @@ export default function ResetPasswordPage() {
     }
     setIsLoading(true);
     try {
-      const result = await authClient.resetPassword({
-        newPassword: data.password,
-        token,
-      });
+      const result = await resetPassword(token, data.password);
       if (result?.error) {
         toast({
           title: "Reset failed",
