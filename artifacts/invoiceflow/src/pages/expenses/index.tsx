@@ -104,7 +104,7 @@ export default function Expenses() {
         </div>
         <div className="flex items-center gap-2">
           <Button
-            variant="outline" className="rounded-xl"
+            variant="outline" className="rounded-xl h-10 px-3"
             onClick={() => {
               const rows: (string | number | undefined | null)[][] = [
                 ["Date", "Category", "Description", "Vendor", "Payment Method", "Reference", "Amount"],
@@ -116,12 +116,12 @@ export default function Expenses() {
               downloadCSV(rows, `expenses-${new Date().toISOString().split("T")[0]}.csv`);
             }}
           >
-            <Download className="w-4 h-4 mr-2" /> Export CSV
+            <Download className="w-4 h-4 sm:mr-2 shrink-0" /><span className="hidden sm:inline">Export CSV</span>
           </Button>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button className="rounded-xl shadow-lg shadow-primary/20 hover-elevate">
-              <Plus className="w-4 h-4 mr-2" /> Add Expense
+            <Button className="rounded-xl shadow-lg shadow-primary/20 hover-elevate h-10 px-3 sm:px-4">
+              <Plus className="w-4 h-4 mr-1.5 shrink-0" /><span className="hidden sm:inline">Add </span>Expense
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md rounded-2xl">

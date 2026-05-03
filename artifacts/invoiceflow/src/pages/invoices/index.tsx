@@ -105,7 +105,7 @@ export default function InvoicesList() {
         </div>
         <div className="flex items-center gap-2">
           <Button
-            variant="outline" className="rounded-xl h-11"
+            variant="outline" className="rounded-xl h-10 px-3"
             onClick={() => {
               const rows: (string | number | undefined | null)[][] = [
                 ["Invoice #", "Customer", "Date", "Due Date", "Status", "Subtotal", "Tax", "Total", "Paid", "Outstanding"],
@@ -118,17 +118,17 @@ export default function InvoicesList() {
               downloadCSV(rows, `invoices-${new Date().toISOString().split("T")[0]}.csv`);
             }}
           >
-            <Download className="w-4 h-4 mr-2" /> Export CSV
+            <Download className="w-4 h-4 sm:mr-2 shrink-0" /><span className="hidden sm:inline">Export CSV</span>
           </Button>
           <Button
             variant={bulkMode ? "default" : "outline"}
-            className="rounded-xl h-11"
+            className="rounded-xl h-10 px-3"
             onClick={() => { setBulkMode((v) => !v); setSelected(new Set()); }}
           >
-            <CheckSquare className="w-4 h-4 mr-2" /> {bulkMode ? "Cancel Select" : "Select"}
+            <CheckSquare className="w-4 h-4 sm:mr-2 shrink-0" /><span className="hidden sm:inline">{bulkMode ? "Cancel" : "Select"}</span>
           </Button>
-          <Button className="rounded-xl shadow-lg shadow-primary/20 hover-elevate h-11 px-6" asChild>
-            <Link href="/invoices/new"><Plus className="w-5 h-5 mr-2" /> Create Invoice</Link>
+          <Button className="rounded-xl shadow-lg shadow-primary/20 hover-elevate h-10 px-3 sm:px-5" asChild>
+            <Link href="/invoices/new"><Plus className="w-5 h-5 mr-1.5 shrink-0" /><span className="hidden xs:inline sm:inline">Create Invoice</span><span className="sm:hidden">New</span></Link>
           </Button>
         </div>
       </div>
