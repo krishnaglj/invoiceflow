@@ -34,11 +34,25 @@ export default function ForgotPasswordPage() {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (result?.error) {
-        toast({
-          title: "Could not send reset email",
-          description: result.error.message || "Please check your email address and try again.",
-          variant: "destructive",
-        });
+        const msg = result.error.message ?? "";
+        const isGoogleAccount =
+          msg.toLowerCase().includes("social") ||
+          msg.toLowerCase().includes("provider") ||
+          msg.toLowerCase().includes("oauth") ||
+          msg.toLowerCase().includes("google");
+        if (isGoogleAccount) {
+          toast({
+            title: "Google account detected",
+            description: "This email uses Google sign-in. Please use 'Continue with Google' on the sign-in page.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Could not send reset email",
+            description: msg || "No account found with that email address.",
+            variant: "destructive",
+          });
+        }
       } else {
         setSentTo(data.email);
         setSent(true);
