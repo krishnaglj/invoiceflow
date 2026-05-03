@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { cn, refreshInvoicePrefix } from "@/lib/utils";
 import {
   LayoutDashboard, Receipt, Users, Package, Settings, LogOut, Menu, X,
-  FileText, TrendingDown, BarChart2, Boxes, ShoppingCart, Truck, Warehouse,
+  FileText, TrendingDown, BarChart2, Boxes, ShoppingCart, Truck, Warehouse, CalendarClock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -29,6 +29,7 @@ const NAV_ITEMS = [
   { icon: Users, label: "Customers", href: "/customers" },
   { icon: Package, label: "Products", href: "/products" },
   { icon: BarChart2, label: "Reports", href: "/reports" },
+  { icon: CalendarClock, label: "Recurring", href: "/recurring" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 

@@ -480,4 +480,44 @@ router.delete("/invoices/:invoiceId/payments/:paymentId", requireAuth, async (re
   res.sendStatus(204);
 });
 
+router.post("/invoices/bulk-action", requireAuth, async (req, res): Promise<void> => {
+  const { ids, action } = req.body as { ids: number[]; action: string };
+  if (!Array.isArray(ids) || ids.length === 0) {
+    res.status(400).json({ error: "ids must be a non-empty array" });
+    return;
+  }
+  const { inArray } = await import("drizzle-orm");
+  // inArray used below
+
+  let affected = 0;
+  if (action === "mark_paid") {
+    const rows = await db
+      .select({ id: invoicesTable.id, total: invoicesTable.total })
+      .from(invoicesTable)
+      .where(and(inArray(invoicesTable.id, ids), eq(invoicesTable.userId, req.userId)));
+    for (const row of rows) {
+      await db.update(invoicesTable)
+        .set({ status: "paid", paidAmount: row.total })
+        .where(eq(invoicesTable.id, row.id));
+    }
+    affected = rows.length;
+  } else if (action === "mark_sent") {
+    const result = await db.update(invoicesTable)
+      .set({ status: "sent" })
+      .where(and(inArray(invoicesTable.id, ids), eq(invoicesTable.userId, req.userId)))
+      .returning({ id: invoicesTable.id });
+    affected = result.length;
+  } else if (action === "delete") {
+    await db.delete(invoiceItemsTable).where(inArray(invoiceItemsTable.invoiceId, ids));
+    const result = await db.delete(invoicesTable)
+      .where(and(inArray(invoicesTable.id, ids), eq(invoicesTable.userId, req.userId)))
+      .returning({ id: invoicesTable.id });
+    affected = result.length;
+  } else {
+    res.status(400).json({ error: "Invalid action" });
+    return;
+  }
+  res.json({ affected });
+});
+
 export default router;

@@ -1104,3 +1104,131 @@ export const GetReorderSuggestionsResponse = zod.array(zod.object({
   reorderLevel: zod.number(),
   suggestedQty: zod.number(),
 }));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AGING REPORT
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const AgingInvoiceItem = zod.object({
+  id: zod.number(),
+  invoiceNumber: zod.string(),
+  customerName: zod.string().nullable(),
+  invoiceDate: zod.string(),
+  dueDate: zod.string().nullable(),
+  total: zod.number(),
+  paidAmount: zod.number(),
+  outstanding: zod.number(),
+  daysOverdue: zod.number(),
+  status: zod.string(),
+});
+
+export const AgingBucket = zod.object({
+  label: zod.string(),
+  daysMin: zod.number(),
+  daysMax: zod.number().nullable(),
+  count: zod.number(),
+  total: zod.number(),
+  invoices: zod.array(AgingInvoiceItem),
+});
+
+export const GetAgingReportResponse = zod.object({
+  totalOutstanding: zod.number(),
+  totalInvoices: zod.number(),
+  buckets: zod.array(AgingBucket),
+});
+
+export type AgingInvoiceItem = zod.infer<typeof AgingInvoiceItem>;
+export type AgingBucket = zod.infer<typeof AgingBucket>;
+export type GetAgingReportResponse = zod.infer<typeof GetAgingReportResponse>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BULK INVOICE ACTION
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const BulkInvoiceActionBody = zod.object({
+  ids: zod.array(zod.number()),
+  action: zod.enum(["mark_paid", "mark_sent", "delete"]),
+});
+
+export const BulkInvoiceActionResponse = zod.object({
+  affected: zod.number(),
+});
+
+export type BulkInvoiceActionBody = zod.infer<typeof BulkInvoiceActionBody>;
+export type BulkInvoiceActionResponse = zod.infer<typeof BulkInvoiceActionResponse>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RECURRING INVOICES
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const RecurringFrequency = zod.enum(["weekly", "monthly", "quarterly", "yearly"]);
+
+export const RecurringInvoiceItem = zod.object({
+  name: zod.string(),
+  description: zod.string().optional().nullable(),
+  hsnCode: zod.string().optional().nullable(),
+  quantity: zod.number(),
+  unit: zod.string(),
+  rate: zod.number(),
+  taxRate: zod.number(),
+});
+
+export const RecurringInvoice = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  status: zod.string(),
+  frequency: RecurringFrequency,
+  dayOfMonth: zod.number().nullable(),
+  nextRunDate: zod.string(),
+  endDate: zod.string().nullable(),
+  lastGeneratedAt: zod.string().nullable(),
+  customerId: zod.number().nullable(),
+  customerName: zod.string().nullable(),
+  customerEmail: zod.string().nullable(),
+  customerPhone: zod.string().nullable(),
+  customerAddress: zod.string().nullable(),
+  customerGstin: zod.string().nullable(),
+  placeOfSupply: zod.string().nullable(),
+  supplyType: zod.string(),
+  items: zod.array(RecurringInvoiceItem),
+  discountType: zod.string(),
+  discountValue: zod.number(),
+  taxPercent: zod.number(),
+  notes: zod.string().nullable(),
+  paymentTerms: zod.string().nullable(),
+  showBankDetails: zod.boolean(),
+  createdAt: zod.string(),
+});
+
+export const CreateRecurringInvoiceBody = zod.object({
+  name: zod.string(),
+  frequency: RecurringFrequency,
+  dayOfMonth: zod.number().optional(),
+  nextRunDate: zod.string(),
+  endDate: zod.string().optional(),
+  customerId: zod.number().optional(),
+  customerName: zod.string().optional(),
+  customerEmail: zod.string().optional(),
+  customerPhone: zod.string().optional(),
+  customerAddress: zod.string().optional(),
+  customerGstin: zod.string().optional(),
+  placeOfSupply: zod.string().optional(),
+  supplyType: zod.string().optional(),
+  items: zod.array(RecurringInvoiceItem),
+  discountType: zod.string().optional(),
+  discountValue: zod.number().optional(),
+  taxPercent: zod.number().optional(),
+  notes: zod.string().optional(),
+  paymentTerms: zod.string().optional(),
+  showBankDetails: zod.boolean().optional(),
+});
+
+export const UpdateRecurringInvoiceBody = CreateRecurringInvoiceBody.partial().extend({
+  status: zod.enum(["active", "paused"]).optional(),
+});
+
+export type RecurringFrequency = zod.infer<typeof RecurringFrequency>;
+export type RecurringInvoiceItem = zod.infer<typeof RecurringInvoiceItem>;
+export type RecurringInvoice = zod.infer<typeof RecurringInvoice>;
+export type CreateRecurringInvoiceBody = zod.infer<typeof CreateRecurringInvoiceBody>;
+export type UpdateRecurringInvoiceBody = zod.infer<typeof UpdateRecurringInvoiceBody>;

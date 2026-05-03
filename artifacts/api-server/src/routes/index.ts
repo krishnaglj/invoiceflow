@@ -13,6 +13,7 @@ import warehousesRouter from "./warehouses";
 import purchaseOrdersRouter from "./purchase-orders";
 import stockMovementsRouter from "./stock-movements";
 import inventoryRouter from "./inventory";
+import recurringInvoicesRouter from "./recurring-invoices";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(warehousesRouter);
 router.use(purchaseOrdersRouter);
 router.use(stockMovementsRouter);
 router.use(inventoryRouter);
+router.use(recurringInvoicesRouter);
 
 export default router;

@@ -46,9 +46,9 @@ artifacts-monorepo/
 - `/` — Landing page (marketing)
 - `/onboarding` — 3-step business profile setup (redirected to automatically if no profile exists after login)
 - `/dashboard` — Stats, revenue chart, recent invoices, top customers
-- `/invoices` — Invoice list with status filters and search
+- `/invoices` — Invoice list with status filters, search, **bulk operations** (Select mode: mark paid/sent/delete), **WhatsApp Remind** quick-link on unpaid cards
 - `/invoices/new` — Create invoice with dynamic line items, HSN/SAC per item, GST rate per item, placeOfSupply, supplyType (CGST/SGST vs IGST)
-- `/invoices/:id` — Invoice preview with Print/Share/Edit/Mark Paid, payment recording UI, IGST/CGST display, payment history panel
+- `/invoices/:id` — Invoice preview with Print/Share/Edit/Mark Paid, **WhatsApp Reminder button**, payment recording UI, IGST/CGST display, payment history panel
 - `/invoices/:id/edit` — Edit invoice
 - `/estimates` — Estimates list with status filters (draft/sent/accepted/rejected/converted)
 - `/estimates/new` — Create estimate (mirrors invoice form)
@@ -56,7 +56,8 @@ artifacts-monorepo/
 - `/estimates/:id/edit` — Edit estimate
 - `/expenses` — Expenses list with category/date filters and summary cards
 - `/expenses/new` — Log expense (date, category, vendor, amount, method)
-- `/reports` — GST Report (GSTR-1 style by slab, month/year filter) + P&L (6-month bar chart, expense breakdown)
+- `/reports` — GST Report (GSTR-1 style by slab, month/year filter) + P&L (6-month bar chart, expense breakdown) + **Aging Report** (outstanding buckets: Current, 1-30, 31-60, 61-90, 90+ days)
+- `/recurring` — **Recurring Invoices**: set up auto-billing schedules (weekly/monthly/quarterly/yearly), Run Now, Pause/Resume, edit template
 - `/customers` — Customer directory
 - `/customers/:id` — Customer detail with invoice history
 - `/products` — Product/service library with HSN code and GST rate fields

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql, and, inArray } from "drizzle-orm";
 import { db, invoicesTable, invoiceItemsTable, expensesTable } from "@workspace/db";
 import {
   GetGstReportQueryParams,
@@ -168,6 +168,87 @@ router.get("/reports/profit-loss", requireAuth, async (req, res): Promise<void> 
       expensesByCategory: expByCat.map((e) => ({ category: e.category, amount: Math.round(e.amount * 100) / 100 })),
     })
   );
+});
+
+router.get("/reports/aging", requireAuth, async (req, res): Promise<void> => {
+  const rows = await db
+    .select({
+      id: invoicesTable.id,
+      invoiceNumber: invoicesTable.invoiceNumber,
+      customerName: invoicesTable.customerName,
+      invoiceDate: invoicesTable.invoiceDate,
+      dueDate: invoicesTable.dueDate,
+      total: invoicesTable.total,
+      paidAmount: invoicesTable.paidAmount,
+      status: invoicesTable.status,
+    })
+    .from(invoicesTable)
+    .where(
+      and(
+        eq(invoicesTable.userId, req.userId),
+        inArray(invoicesTable.status, ["sent", "partial", "overdue"]),
+      )
+    );
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const buckets = [
+    { label: "Current",    daysMin: -Infinity, daysMax: 0   },
+    { label: "1–30 Days",  daysMin: 1,         daysMax: 30  },
+    { label: "31–60 Days", daysMin: 31,        daysMax: 60  },
+    { label: "61–90 Days", daysMin: 61,        daysMax: 90  },
+    { label: "90+ Days",   daysMin: 91,        daysMax: Infinity },
+  ].map((b) => ({ ...b, count: 0, total: 0, invoices: [] as any[] }));
+
+  let totalOutstanding = 0;
+
+  for (const row of rows) {
+    const outstanding = Math.max(0, row.total - row.paidAmount);
+    if (outstanding <= 0) continue;
+
+    let daysOverdue = 0;
+    if (row.dueDate) {
+      const due = new Date(row.dueDate);
+      due.setHours(0, 0, 0, 0);
+      daysOverdue = Math.floor((today.getTime() - due.getTime()) / 86400000);
+    }
+
+    const item = {
+      id: row.id,
+      invoiceNumber: row.invoiceNumber,
+      customerName: row.customerName,
+      invoiceDate: row.invoiceDate,
+      dueDate: row.dueDate,
+      total: row.total,
+      paidAmount: row.paidAmount,
+      outstanding,
+      daysOverdue: Math.max(0, daysOverdue),
+      status: row.status,
+    };
+
+    totalOutstanding += outstanding;
+
+    const bucket = buckets.find((b) => daysOverdue >= b.daysMin && daysOverdue <= b.daysMax);
+    if (bucket) {
+      bucket.count++;
+      bucket.total += outstanding;
+      bucket.invoices.push(item);
+    }
+  }
+
+  res.json({
+    totalOutstanding: Math.round(totalOutstanding * 100) / 100,
+    totalInvoices: rows.length,
+    buckets: buckets.map((b) => ({
+      label: b.label,
+      daysMin: b.daysMin === -Infinity ? 0 : b.daysMin,
+      daysMax: b.daysMax === Infinity ? null : b.daysMax,
+      count: b.count,
+      total: Math.round(b.total * 100) / 100,
+      invoices: b.invoices,
+    })),
+  });
 });
 
 export default router;

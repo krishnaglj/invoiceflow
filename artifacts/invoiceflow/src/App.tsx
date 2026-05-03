@@ -30,6 +30,7 @@ import PurchaseOrderForm from "./pages/purchase-orders/form";
 import PurchaseOrderDetail from "./pages/purchase-orders/detail";
 import InventoryOverview from "./pages/inventory";
 import StockMovements from "./pages/inventory/movements";
+import RecurringInvoices from "./pages/recurring";
 
 import { AuthGuard } from "./components/auth-guard";
 import { AppLayout } from "./components/layout";
@@ -137,6 +138,8 @@ function Router() {
       <Route path="/purchase-orders/:id"><ProtectedRoute component={PurchaseOrderDetail} /></Route>
       <Route path="/inventory"><ProtectedRoute component={InventoryOverview} /></Route>
       <Route path="/inventory/movements"><ProtectedRoute component={StockMovements} /></Route>
+
+      <Route path="/recurring"><ProtectedRoute component={RecurringInvoices} /></Route>
 
       <Route component={NotFound} />
     </Switch>

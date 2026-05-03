@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/status-badge";
-import { Printer, Share2, Edit, Trash2, CheckCircle, ChevronLeft, Plus, X } from "lucide-react";
+import { Printer, Share2, Edit, Trash2, CheckCircle, ChevronLeft, Plus, X, Bell } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -226,6 +226,32 @@ export default function InvoiceDetail() {
           <Button variant="outline" size="sm" className="rounded-xl" onClick={handlePrint}>
             <Printer className="w-4 h-4 sm:mr-2 shrink-0" /><span className="hidden sm:inline">Print</span>
           </Button>
+          {invoice.status !== "paid" && (invoice as any).customerPhone && (
+            <a
+              href={`https://wa.me/${((invoice as any).customerPhone as string).replace(/\D/g, "")}?text=${encodeURIComponent(
+                [
+                  `*Payment Reminder* 🔔`,
+                  ``,
+                  `Hi ${invoice.customerName || "there"},`,
+                  ``,
+                  `This is a friendly reminder for Invoice *${invoice.invoiceNumber}*.`,
+                  ``,
+                  `💰 Outstanding: ₹${(invoice.total - invoice.paidAmount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`,
+                  invoice.dueDate ? `📅 Due: ${formatDate(invoice.dueDate)}` : null,
+                  ``,
+                  `Please make payment at your earliest convenience. Thank you!`,
+                  ``,
+                  `— ${profile?.shopName ?? ""}`,
+                ].filter(Boolean).join("\n")
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Button variant="outline" size="sm" className="rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                <Bell className="w-4 h-4 sm:mr-2 shrink-0" /><span className="hidden sm:inline">Remind</span>
+              </Button>
+            </a>
+          )}
           <Dialog>
             <DialogTrigger asChild>
               <Button size="sm" className="rounded-xl shadow-lg shadow-primary/20">

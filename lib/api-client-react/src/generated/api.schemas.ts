@@ -996,3 +996,112 @@ export type GetInventoryParams = {
   lowStockOnly?: boolean;
   search?: string;
 };
+
+// ─── Aging Report ─────────────────────────────────────────────────────────────
+
+export interface AgingInvoiceItem {
+  id: number;
+  invoiceNumber: string;
+  customerName: string | null;
+  invoiceDate: string;
+  dueDate: string | null;
+  total: number;
+  paidAmount: number;
+  outstanding: number;
+  daysOverdue: number;
+  status: string;
+}
+
+export interface AgingBucket {
+  label: string;
+  daysMin: number;
+  daysMax: number | null;
+  count: number;
+  total: number;
+  invoices: AgingInvoiceItem[];
+}
+
+export interface GetAgingReportResponse {
+  totalOutstanding: number;
+  totalInvoices: number;
+  buckets: AgingBucket[];
+}
+
+// ─── Bulk Invoice Action ──────────────────────────────────────────────────────
+
+export interface BulkInvoiceActionBody {
+  ids: number[];
+  action: 'mark_paid' | 'mark_sent' | 'delete';
+}
+
+export interface BulkInvoiceActionResponse {
+  affected: number;
+}
+
+// ─── Recurring Invoices ───────────────────────────────────────────────────────
+
+export type RecurringFrequency = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+
+export interface RecurringInvoiceItemData {
+  name: string;
+  description?: string | null;
+  hsnCode?: string | null;
+  quantity: number;
+  unit: string;
+  rate: number;
+  taxRate: number;
+}
+
+export interface RecurringInvoice {
+  id: number;
+  name: string;
+  status: string;
+  frequency: RecurringFrequency;
+  dayOfMonth: number | null;
+  nextRunDate: string;
+  endDate: string | null;
+  lastGeneratedAt: string | null;
+  customerId: number | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  customerAddress: string | null;
+  customerGstin: string | null;
+  placeOfSupply: string | null;
+  supplyType: string;
+  items: RecurringInvoiceItemData[];
+  discountType: string;
+  discountValue: number;
+  taxPercent: number;
+  notes: string | null;
+  paymentTerms: string | null;
+  showBankDetails: boolean;
+  createdAt: string;
+}
+
+export interface CreateRecurringInvoiceBody {
+  name: string;
+  frequency: RecurringFrequency;
+  dayOfMonth?: number;
+  nextRunDate: string;
+  endDate?: string;
+  customerId?: number;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  customerGstin?: string;
+  placeOfSupply?: string;
+  supplyType?: string;
+  items: RecurringInvoiceItemData[];
+  discountType?: string;
+  discountValue?: number;
+  taxPercent?: number;
+  notes?: string;
+  paymentTerms?: string;
+  showBankDetails?: boolean;
+}
+
+export interface UpdateRecurringInvoiceBody extends Partial<CreateRecurringInvoiceBody> {
+  status?: 'active' | 'paused';
+}

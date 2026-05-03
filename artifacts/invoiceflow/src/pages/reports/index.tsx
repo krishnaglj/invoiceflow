@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useGetGstReport, useGetProfitLoss } from "@workspace/api-client-react";
-import { formatCurrency } from "@/lib/utils";
+import { useGetGstReport, useGetProfitLoss, useGetAgingReport } from "@workspace/api-client-react";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend, LineChart, Line } from "recharts";
-import { FileBarChart2, TrendingUp, TrendingDown, IndianRupee } from "lucide-react";
+import { FileBarChart2, TrendingUp, TrendingDown, IndianRupee, AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { Link } from "wouter";
 
 const MONTHS = [
   { value: "01", label: "January" },
@@ -27,11 +28,16 @@ const now = new Date();
 export default function Reports() {
   const [gstMonth, setGstMonth] = useState(String(now.getMonth() + 1).padStart(2, "0"));
   const [gstYear, setGstYear] = useState(now.getFullYear());
+  const [openBuckets, setOpenBuckets] = useState<Set<string>>(new Set(["Current", "1–30 Days"]));
 
   const { data: gstReport, isLoading: gstLoading } = useGetGstReport({ month: gstMonth, year: gstYear });
   const { data: pl, isLoading: plLoading } = useGetProfitLoss({});
+  const { data: aging, isLoading: agingLoading } = useGetAgingReport();
 
   const years = [now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2];
+
+  const toggleBucket = (label: string) =>
+    setOpenBuckets((prev) => { const s = new Set(prev); s.has(label) ? s.delete(label) : s.add(label); return s; });
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6 animate-in fade-in duration-500">
@@ -44,6 +50,7 @@ export default function Reports() {
         <TabsList className="rounded-xl">
           <TabsTrigger value="gst" className="rounded-lg">GST Summary</TabsTrigger>
           <TabsTrigger value="pl" className="rounded-lg">Profit & Loss</TabsTrigger>
+          <TabsTrigger value="aging" className="rounded-lg">Aging Report</TabsTrigger>
         </TabsList>
 
         {/* ─── GST SUMMARY ────────────────────────────────────────────── */}
@@ -256,6 +263,80 @@ export default function Reports() {
               </Card>
             </>
           ) : null}
+        </TabsContent>
+
+        {/* ─── AGING REPORT ───────────────────────────────────────────── */}
+        <TabsContent value="aging" className="space-y-6 mt-6">
+          {agingLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[1,2,3].map(i => <div key={i} className="h-24 bg-muted/30 animate-pulse rounded-2xl" />)}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <StatCard label="Total Outstanding" value={formatCurrency(aging?.totalOutstanding ?? 0)} icon={IndianRupee} color="text-red-600" bg="bg-red-50" />
+                <StatCard label="Unpaid Invoices" value={aging?.totalInvoices ?? 0} icon={AlertCircle} color="text-amber-600" bg="bg-amber-50" />
+                <StatCard label="90+ Days Overdue" value={formatCurrency(aging?.buckets?.find(b => b.label === "90+ Days")?.total ?? 0)} icon={TrendingDown} color="text-rose-700" bg="bg-rose-50" />
+              </div>
+
+              <div className="space-y-3">
+                {(aging?.buckets ?? []).map((bucket) => (
+                  <Card key={bucket.label} className="rounded-2xl border-border/50 shadow-sm overflow-hidden">
+                    <button
+                      className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors"
+                      onClick={() => toggleBucket(bucket.label)}
+                    >
+                      <div className="flex items-center gap-3">
+                        {openBuckets.has(bucket.label)
+                          ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                          : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                        <span className="font-semibold text-sm">{bucket.label}</span>
+                        <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{bucket.count}</span>
+                      </div>
+                      <span className={`font-bold text-sm ${bucket.label === "Current" ? "text-amber-600" : bucket.count > 0 ? "text-red-600" : "text-muted-foreground"}`}>
+                        {formatCurrency(bucket.total)}
+                      </span>
+                    </button>
+                    {openBuckets.has(bucket.label) && bucket.invoices.length > 0 && (
+                      <div className="border-t">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/40">
+                            <tr>
+                              <th className="text-left px-5 py-2 font-medium text-muted-foreground">Invoice</th>
+                              <th className="text-left px-3 py-2 font-medium text-muted-foreground hidden sm:table-cell">Customer</th>
+                              <th className="text-left px-3 py-2 font-medium text-muted-foreground hidden md:table-cell">Due Date</th>
+                              <th className="text-right px-3 py-2 font-medium text-muted-foreground hidden sm:table-cell">Overdue</th>
+                              <th className="text-right px-5 py-2 font-medium text-muted-foreground">Outstanding</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {bucket.invoices.map((inv: any) => (
+                              <tr key={inv.id} className="border-t hover:bg-muted/20 transition-colors">
+                                <td className="px-5 py-3">
+                                  <Link href={`/invoices/${inv.id}`} className="font-medium text-primary hover:underline">{inv.invoiceNumber}</Link>
+                                </td>
+                                <td className="px-3 py-3 text-muted-foreground hidden sm:table-cell">{inv.customerName || "—"}</td>
+                                <td className="px-3 py-3 text-muted-foreground hidden md:table-cell">{inv.dueDate ? formatDate(inv.dueDate) : "—"}</td>
+                                <td className="px-3 py-3 text-right hidden sm:table-cell">
+                                  {inv.daysOverdue > 0
+                                    ? <span className="text-red-600 font-medium">{inv.daysOverdue}d</span>
+                                    : <span className="text-muted-foreground">—</span>}
+                                </td>
+                                <td className="px-5 py-3 text-right font-semibold text-red-600">{formatCurrency(inv.outstanding)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    {openBuckets.has(bucket.label) && bucket.invoices.length === 0 && (
+                      <div className="border-t px-5 py-4 text-sm text-muted-foreground italic">No invoices in this bucket.</div>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>

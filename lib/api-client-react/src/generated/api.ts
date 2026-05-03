@@ -80,6 +80,13 @@ import type {
   InventoryValuation,
   ReorderSuggestion,
   GetInventoryParams,
+  GetAgingReportResponse,
+  BulkInvoiceActionBody,
+  BulkInvoiceActionResponse,
+  RecurringInvoice,
+  RecurringInvoiceItemData,
+  CreateRecurringInvoiceBody,
+  UpdateRecurringInvoiceBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -2495,3 +2502,206 @@ export function useGetProfitLoss<TData = Awaited<ReturnType<typeof getProfitLoss
   const query = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
   return { ...query, queryKey };
 }
+
+// ─── AGING REPORT ────────────────────────────────────────────────────────────
+
+export const getAgingReport = async (options?: RequestInit): Promise<GetAgingReportResponse> =>
+  customFetch<GetAgingReportResponse>("/api/reports/aging", { ...options, method: "GET" });
+
+export const getGetAgingReportQueryKey = () => [`/api/reports/aging`] as const;
+
+export function useGetAgingReport<
+  TData = Awaited<ReturnType<typeof getAgingReport>>,
+  TError = ErrorType<unknown>,
+>(
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getAgingReport>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetAgingReportQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAgingReport>>> = ({ signal }) =>
+    getAgingReport({ signal, ...requestOptions });
+  const query = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey };
+}
+
+// ─── BULK INVOICE ACTION ──────────────────────────────────────────────────────
+
+export const bulkInvoiceAction = async (
+  data: BulkInvoiceActionBody,
+  options?: RequestInit,
+): Promise<BulkInvoiceActionResponse> =>
+  customFetch<BulkInvoiceActionResponse>("/api/invoices/bulk-action", {
+    ...options,
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const useBulkInvoiceAction = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof bulkInvoiceAction>>,
+      TError,
+      BulkInvoiceActionBody,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseMutationResult<Awaited<ReturnType<typeof bulkInvoiceAction>>, TError, BulkInvoiceActionBody, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  return useMutation({
+    mutationFn: (data) => bulkInvoiceAction(data, requestOptions),
+    ...mutationOptions,
+  });
+};
+
+// ─── RECURRING INVOICES ───────────────────────────────────────────────────────
+
+export const listRecurringInvoices = async (options?: RequestInit): Promise<RecurringInvoice[]> =>
+  customFetch<RecurringInvoice[]>("/api/recurring-invoices", { ...options, method: "GET" });
+
+export const getListRecurringInvoicesQueryKey = () => [`/api/recurring-invoices`] as const;
+
+export function useListRecurringInvoices<
+  TData = Awaited<ReturnType<typeof listRecurringInvoices>>,
+  TError = ErrorType<unknown>,
+>(
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listRecurringInvoices>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getListRecurringInvoicesQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listRecurringInvoices>>> = ({ signal }) =>
+    listRecurringInvoices({ signal, ...requestOptions });
+  const query = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey };
+}
+
+export const createRecurringInvoice = async (
+  data: CreateRecurringInvoiceBody,
+  options?: RequestInit,
+): Promise<RecurringInvoice> =>
+  customFetch<RecurringInvoice>("/api/recurring-invoices", {
+    ...options,
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const useCreateRecurringInvoice = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createRecurringInvoice>>,
+      TError,
+      CreateRecurringInvoiceBody,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseMutationResult<Awaited<ReturnType<typeof createRecurringInvoice>>, TError, CreateRecurringInvoiceBody, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  return useMutation({
+    mutationFn: (data) => createRecurringInvoice(data, requestOptions),
+    ...mutationOptions,
+  });
+};
+
+export const updateRecurringInvoice = async (
+  id: number,
+  data: UpdateRecurringInvoiceBody,
+  options?: RequestInit,
+): Promise<RecurringInvoice> =>
+  customFetch<RecurringInvoice>(`/api/recurring-invoices/${id}`, {
+    ...options,
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+
+export const useUpdateRecurringInvoice = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateRecurringInvoice>>,
+      TError,
+      { id: number; data: UpdateRecurringInvoiceBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateRecurringInvoice>>,
+  TError,
+  { id: number; data: UpdateRecurringInvoiceBody },
+  TContext
+> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  return useMutation({
+    mutationFn: ({ id, data }) => updateRecurringInvoice(id, data, requestOptions),
+    ...mutationOptions,
+  });
+};
+
+export const deleteRecurringInvoice = async (id: number, options?: RequestInit): Promise<void> =>
+  customFetch<void>(`/api/recurring-invoices/${id}`, { ...options, method: "DELETE" });
+
+export const useDeleteRecurringInvoice = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteRecurringInvoice>>,
+      TError,
+      number,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseMutationResult<Awaited<ReturnType<typeof deleteRecurringInvoice>>, TError, number, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  return useMutation({
+    mutationFn: (id) => deleteRecurringInvoice(id, requestOptions),
+    ...mutationOptions,
+  });
+};
+
+export const runRecurringInvoice = async (
+  id: number,
+  options?: RequestInit,
+): Promise<{ invoiceId: number; invoiceNumber: string }> =>
+  customFetch<{ invoiceId: number; invoiceNumber: string }>(`/api/recurring-invoices/${id}/run`, {
+    ...options,
+    method: "POST",
+  });
+
+export const useRunRecurringInvoice = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof runRecurringInvoice>>,
+      TError,
+      number,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseMutationResult<Awaited<ReturnType<typeof runRecurringInvoice>>, TError, number, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  return useMutation({
+    mutationFn: (id) => runRecurringInvoice(id, requestOptions),
+    ...mutationOptions,
+  });
+};
