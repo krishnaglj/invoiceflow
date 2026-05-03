@@ -1,6 +1,9 @@
 import { Link, useLocation } from "wouter";
 import { cn, refreshInvoicePrefix } from "@/lib/utils";
-import { LayoutDashboard, Receipt, Users, Package, Settings, LogOut, Menu, X, FileText, TrendingDown, BarChart2 } from "lucide-react";
+import {
+  LayoutDashboard, Receipt, Users, Package, Settings, LogOut, Menu, X,
+  FileText, TrendingDown, BarChart2, Boxes, ShoppingCart, Truck, Warehouse,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useState, useEffect } from "react";
@@ -27,6 +30,13 @@ const NAV_ITEMS = [
   { icon: Package, label: "Products", href: "/products" },
   { icon: BarChart2, label: "Reports", href: "/reports" },
   { icon: Settings, label: "Settings", href: "/settings" },
+];
+
+const INVENTORY_ITEMS = [
+  { icon: Boxes, label: "Stock Overview", href: "/inventory" },
+  { icon: ShoppingCart, label: "Purchase Orders", href: "/purchase-orders" },
+  { icon: Truck, label: "Vendors", href: "/vendors" },
+  { icon: Warehouse, label: "Warehouses", href: "/warehouses" },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -60,6 +70,27 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
         <div className="flex-1 py-4 px-2 flex flex-col gap-0.5 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
+            const isActive = location === item.href || location.startsWith(item.href + "/");
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-xl font-medium transition-all duration-200 text-sm",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/10"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground hover-elevate",
+                )}
+              >
+                <item.icon className="w-4 h-4 shrink-0" />
+                {item.label}
+              </Link>
+            );
+          })}
+          <div className="mt-2 mb-1 px-3">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Inventory</span>
+          </div>
+          {INVENTORY_ITEMS.map((item) => {
             const isActive = location === item.href || location.startsWith(item.href + "/");
             return (
               <Link
@@ -118,6 +149,23 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {mobileOpen && (
           <div className="fixed inset-0 top-16 bg-background z-40 p-4 flex flex-col gap-2 overflow-y-auto no-print">
             {NAV_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-4 px-4 py-3 rounded-xl font-medium text-base",
+                  location.startsWith(item.href)
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-foreground border",
+                )}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.label}
+              </Link>
+            ))}
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60 px-2 pt-2">Inventory</p>
+            {INVENTORY_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

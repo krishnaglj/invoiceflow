@@ -22,6 +22,14 @@ import EstimateForm from "./pages/estimates/form";
 import EstimateDetail from "./pages/estimates/detail";
 import Expenses from "./pages/expenses";
 import Reports from "./pages/reports";
+import Vendors from "./pages/vendors";
+import VendorForm from "./pages/vendors/form";
+import Warehouses from "./pages/warehouses";
+import PurchaseOrdersList from "./pages/purchase-orders";
+import PurchaseOrderForm from "./pages/purchase-orders/form";
+import PurchaseOrderDetail from "./pages/purchase-orders/detail";
+import InventoryOverview from "./pages/inventory";
+import StockMovements from "./pages/inventory/movements";
 
 import { AuthGuard } from "./components/auth-guard";
 import { AppLayout } from "./components/layout";
@@ -118,6 +126,17 @@ function Router() {
       <Route path="/expenses"><ProtectedRoute component={Expenses} /></Route>
       <Route path="/reports"><ProtectedRoute component={Reports} /></Route>
       <Route path="/settings"><ProtectedRoute component={Settings} /></Route>
+
+      <Route path="/vendors"><ProtectedRoute component={Vendors} /></Route>
+      <Route path="/vendors/new"><ProtectedRoute component={VendorForm} /></Route>
+      <Route path="/vendors/:id/edit"><ProtectedRoute component={VendorForm} /></Route>
+      <Route path="/warehouses"><ProtectedRoute component={Warehouses} /></Route>
+      <Route path="/purchase-orders"><ProtectedRoute component={PurchaseOrdersList} /></Route>
+      <Route path="/purchase-orders/new"><ProtectedRoute component={PurchaseOrderForm} /></Route>
+      <Route path="/purchase-orders/:id/edit"><ProtectedRoute component={PurchaseOrderForm} /></Route>
+      <Route path="/purchase-orders/:id"><ProtectedRoute component={PurchaseOrderDetail} /></Route>
+      <Route path="/inventory"><ProtectedRoute component={InventoryOverview} /></Route>
+      <Route path="/inventory/movements"><ProtectedRoute component={StockMovements} /></Route>
 
       <Route component={NotFound} />
     </Switch>

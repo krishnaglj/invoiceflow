@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useListProducts, useCreateProduct, useDeleteProduct } from "@workspace/api-client-react";
+import { useListProducts, useCreateProduct, useDeleteProduct, useUpdateProduct } from "@workspace/api-client-react";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Search, Trash2, PackageSearch } from "lucide-react";
+import { Plus, Search, Trash2, PackageSearch, AlertTriangle, PackageX, Boxes } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 
 const GST_RATES = [0, 5, 12, 18, 28];
 
@@ -24,7 +25,12 @@ const productSchema = z.object({
   unit: z.string().default("pcs"),
   hsnCode: z.string().optional(),
   taxRate: z.coerce.number().default(0),
+  trackInventory: z.boolean().default(false),
+  reorderLevel: z.coerce.number().min(0).default(0),
+  costPrice: z.coerce.number().min(0).optional(),
 });
+
+type ProductForm = z.infer<typeof productSchema>;
 
 export default function Products() {
   const [search, setSearch] = useState("");
@@ -34,19 +40,22 @@ export default function Products() {
   const queryClient = useQueryClient();
   const createMut = useCreateProduct();
   const deleteMut = useDeleteProduct();
+  const updateMut = useUpdateProduct();
 
-  const form = useForm<z.infer<typeof productSchema>>({
+  const form = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
-    defaultValues: { unit: "pcs", defaultRate: 0, taxRate: 0 },
+    defaultValues: { unit: "pcs", defaultRate: 0, taxRate: 0, trackInventory: false, reorderLevel: 0 },
   });
 
-  const onSubmit = (data: z.infer<typeof productSchema>) => {
+  const watchTrack = form.watch("trackInventory");
+
+  const onSubmit = (data: ProductForm) => {
     createMut.mutate({ data }, {
       onSuccess: () => {
         toast({ title: "Product added" });
         queryClient.invalidateQueries({ queryKey: ["/api/products"] });
         setIsOpen(false);
-        form.reset({ unit: "pcs", defaultRate: 0, taxRate: 0 });
+        form.reset({ unit: "pcs", defaultRate: 0, taxRate: 0, trackInventory: false, reorderLevel: 0 });
       },
     });
   };
@@ -58,6 +67,15 @@ export default function Products() {
       });
     }
   };
+
+  const toggleTracking = (id: number, current: boolean) => {
+    updateMut.mutate({ id, data: { trackInventory: !current } }, {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/products"] }),
+    });
+  };
+
+  const trackedProducts = products?.filter((p) => p.trackInventory) ?? [];
+  const lowStockCount = trackedProducts.filter((p) => p.currentStock <= p.reorderLevel && p.currentStock >= 0).length;
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
@@ -108,24 +126,66 @@ export default function Products() {
                     name="taxRate"
                     render={({ field }) => (
                       <Select value={String(field.value)} onValueChange={(v) => field.onChange(parseFloat(v))}>
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
+                        <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {GST_RATES.map((r) => (
-                            <SelectItem key={r} value={String(r)}>{r}%</SelectItem>
-                          ))}
+                          {GST_RATES.map((r) => <SelectItem key={r} value={String(r)}>{r}%</SelectItem>)}
                         </SelectContent>
                       </Select>
                     )}
                   />
                 </div>
               </div>
+
+              {/* Inventory section */}
+              <div className="border-t pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Track Inventory</Label>
+                    <p className="text-xs text-muted-foreground">Auto-deduct stock when invoiced</p>
+                  </div>
+                  <Controller
+                    control={form.control}
+                    name="trackInventory"
+                    render={({ field }) => (
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    )}
+                  />
+                </div>
+                {watchTrack && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Cost Price (₹)</Label>
+                      <Input type="number" step="0.01" placeholder="Purchase cost" {...form.register("costPrice")} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Reorder Level</Label>
+                      <Input type="number" step="1" placeholder="Alert below" {...form.register("reorderLevel")} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <Button type="submit" className="w-full mt-4" disabled={createMut.isPending}>Save Item</Button>
             </form>
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Inventory summary bar */}
+      {trackedProducts.length > 0 && (
+        <div className="flex gap-3 flex-wrap">
+          <div className="flex items-center gap-2 text-sm px-3 py-1.5 bg-muted/40 rounded-lg">
+            <Boxes className="w-4 h-4 text-primary" />
+            <span>{trackedProducts.length} tracked</span>
+          </div>
+          {lowStockCount > 0 && (
+            <div className="flex items-center gap-2 text-sm px-3 py-1.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-lg">
+              <AlertTriangle className="w-4 h-4" />
+              <span>{lowStockCount} low stock</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -138,41 +198,68 @@ export default function Products() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {products?.map((p) => (
-          <Card key={p.id} className="rounded-2xl border-border/50 shadow-sm hover-elevate group">
-            <CardContent className="p-5 flex flex-col h-full">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-lg">{p.name}</h3>
-                <Button
-                  variant="ghost" size="icon"
-                  className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
-                  onClick={() => handleDelete(p.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-              {p.description && (
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{p.description}</p>
-              )}
-              <div className="mt-auto pt-3 space-y-2 border-t border-border/50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-muted-foreground uppercase bg-muted/50 px-2 py-1 rounded-md">{p.unit}</span>
-                    {p.hsnCode && (
-                      <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">HSN: {p.hsnCode}</span>
+        {isLoading ? null : products?.map((p) => {
+          const isLowStock = p.trackInventory && p.currentStock <= p.reorderLevel;
+          const isOutOfStock = p.trackInventory && p.currentStock === 0;
+          return (
+            <Card key={p.id} className="rounded-2xl border-border/50 shadow-sm hover-elevate group">
+              <CardContent className="p-5 flex flex-col h-full">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    <h3 className="font-bold text-lg leading-tight">{p.name}</h3>
+                    {isOutOfStock && <Badge variant="destructive" className="text-xs shrink-0">Out</Badge>}
+                    {!isOutOfStock && isLowStock && <Badge className="text-xs bg-yellow-100 text-yellow-700 hover:bg-yellow-100 shrink-0">Low</Badge>}
+                  </div>
+                  <div className="flex items-center gap-1 ml-2 shrink-0">
+                    <Button
+                      variant="ghost" size="icon"
+                      className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
+                      onClick={() => handleDelete(p.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                {p.description && (
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{p.description}</p>
+                )}
+                <div className="mt-auto pt-3 space-y-2 border-t border-border/50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-muted-foreground uppercase bg-muted/50 px-2 py-1 rounded-md">{p.unit}</span>
+                      {p.hsnCode && (
+                        <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">HSN: {p.hsnCode}</span>
+                      )}
+                    </div>
+                    <span className="text-xl font-display font-bold text-primary">{formatCurrency(p.defaultRate)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-2">
+                      {p.taxRate > 0 && (
+                        <Badge variant="outline" className="text-xs text-muted-foreground border-muted-foreground/30">GST {p.taxRate}%</Badge>
+                      )}
+                    </div>
+                    {p.trackInventory ? (
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className={`font-semibold ${isOutOfStock ? "text-destructive" : isLowStock ? "text-yellow-600" : "text-green-600"}`}>
+                          {p.currentStock} {p.unit}
+                        </span>
+                        <span className="text-muted-foreground">in stock</span>
+                      </div>
+                    ) : (
+                      <button
+                        className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors opacity-0 group-hover:opacity-100"
+                        onClick={() => toggleTracking(p.id, false)}
+                      >
+                        + Track stock
+                      </button>
                     )}
                   </div>
-                  <span className="text-xl font-display font-bold text-primary">{formatCurrency(p.defaultRate)}</span>
                 </div>
-                {p.taxRate > 0 && (
-                  <div className="flex justify-end">
-                    <Badge variant="outline" className="text-xs text-muted-foreground border-muted-foreground/30">GST {p.taxRate}%</Badge>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
         {products?.length === 0 && (
           <div className="col-span-full py-16 flex flex-col items-center justify-center text-center text-muted-foreground border border-dashed rounded-3xl">
             <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mb-4">

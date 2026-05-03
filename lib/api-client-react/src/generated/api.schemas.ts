@@ -202,6 +202,11 @@ export interface Product {
   /** @nullable */
   hsnCode?: string | null;
   taxRate: number;
+  trackInventory: boolean;
+  reorderLevel: number;
+  /** @nullable */
+  costPrice?: number | null;
+  currentStock: number;
   createdAt: string;
 }
 
@@ -741,3 +746,253 @@ export const ListInvoicesStatus = {
   overdue: "overdue",
   partial: "partial",
 } as const;
+
+// ─── Vendors ──────────────────────────────────────────────────────────────────
+
+export interface Vendor {
+  id: number;
+  name: string;
+  businessName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  gstin?: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface CreateVendorBody {
+  name: string;
+  businessName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  gstin?: string;
+  notes?: string;
+}
+
+export type UpdateVendorBody = Partial<CreateVendorBody>;
+
+export type ListVendorsParams = { search?: string };
+
+// ─── Warehouses ───────────────────────────────────────────────────────────────
+
+export interface Warehouse {
+  id: number;
+  name: string;
+  location?: string | null;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface CreateWarehouseBody {
+  name: string;
+  location?: string;
+  isDefault?: boolean;
+}
+
+export type UpdateWarehouseBody = Partial<CreateWarehouseBody>;
+
+// ─── Purchase Orders ──────────────────────────────────────────────────────────
+
+export interface PurchaseOrderItem {
+  id: number;
+  poId: number;
+  productId?: number | null;
+  name: string;
+  description?: string | null;
+  hsnCode?: string | null;
+  quantity: number;
+  receivedQty: number;
+  unit: string;
+  rate: number;
+  taxRate: number;
+  amount: number;
+}
+
+export interface PurchaseOrderItemInput {
+  productId?: number;
+  name: string;
+  description?: string;
+  hsnCode?: string;
+  quantity: number;
+  unit: string;
+  rate: number;
+  taxRate?: number;
+  amount: number;
+}
+
+export interface PurchaseOrderListItem {
+  id: number;
+  vendorId?: number | null;
+  vendorName?: string | null;
+  poNumber: string;
+  poDate: string;
+  expectedDate?: string | null;
+  status: "draft" | "sent" | "partial" | "received" | "cancelled";
+  total: number;
+  createdAt: string;
+}
+
+export interface PurchaseOrder {
+  id: number;
+  vendorId?: number | null;
+  vendorName?: string | null;
+  vendorGstin?: string | null;
+  poNumber: string;
+  poDate: string;
+  expectedDate?: string | null;
+  status: "draft" | "sent" | "partial" | "received" | "cancelled";
+  warehouseId?: number | null;
+  notes?: string | null;
+  subtotal: number;
+  taxPercent: number;
+  taxAmount: number;
+  total: number;
+  items: PurchaseOrderItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePurchaseOrderBody {
+  vendorId?: number;
+  vendorName?: string;
+  vendorGstin?: string;
+  poNumber: string;
+  poDate: string;
+  expectedDate?: string;
+  status?: "draft" | "sent" | "partial" | "received" | "cancelled";
+  warehouseId?: number;
+  notes?: string;
+  taxPercent?: number;
+  items: PurchaseOrderItemInput[];
+}
+
+export type UpdatePurchaseOrderBody = Omit<Partial<CreatePurchaseOrderBody>, "items"> & {
+  items?: PurchaseOrderItemInput[];
+};
+
+export interface ReceivePurchaseOrderBody {
+  warehouseId?: number;
+  receivedDate?: string;
+  items: Array<{ itemId: number; receivedQty: number }>;
+  notes?: string;
+}
+
+export interface NextPoNumber {
+  poNumber: string;
+  number: number;
+}
+
+export type ListPurchaseOrdersParams = {
+  status?: "draft" | "sent" | "partial" | "received" | "cancelled";
+  vendorId?: number;
+  search?: string;
+};
+
+// ─── Stock Movements ──────────────────────────────────────────────────────────
+
+export interface StockMovement {
+  id: number;
+  productId: number;
+  productName?: string | null;
+  warehouseId?: number | null;
+  warehouseName?: string | null;
+  type: "in" | "out" | "adjustment" | "transfer";
+  quantity: number;
+  beforeQty: number;
+  afterQty: number;
+  refType?: string | null;
+  refId?: number | null;
+  notes?: string | null;
+  date: string;
+  createdAt: string;
+}
+
+export interface CreateStockAdjustmentBody {
+  productId: number;
+  warehouseId?: number;
+  type: "in" | "out" | "adjustment";
+  quantity: number;
+  date: string;
+  notes?: string;
+}
+
+export interface CreateStockTransferBody {
+  productId: number;
+  fromWarehouseId: number;
+  toWarehouseId: number;
+  quantity: number;
+  date: string;
+  notes?: string;
+}
+
+export type ListStockMovementsParams = {
+  productId?: number;
+  warehouseId?: number;
+  type?: "in" | "out" | "adjustment" | "transfer";
+  startDate?: string;
+  endDate?: string;
+};
+
+// ─── Inventory ────────────────────────────────────────────────────────────────
+
+export interface WarehouseStockBreakdown {
+  warehouseId: number;
+  warehouseName: string;
+  quantity: number;
+  avgCost: number;
+}
+
+export interface InventoryProduct {
+  productId: number;
+  name: string;
+  hsnCode?: string | null;
+  unit: string;
+  reorderLevel: number;
+  costPrice?: number | null;
+  totalQty: number;
+  avgCost: number;
+  totalValue: number;
+  isLowStock: boolean;
+  warehouseBreakdown: WarehouseStockBreakdown[];
+}
+
+export interface InventoryOverview {
+  totalProducts: number;
+  totalValue: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  items: InventoryProduct[];
+}
+
+export interface InventoryValuationItem {
+  productId: number;
+  name: string;
+  totalQty: number;
+  avgCost: number;
+  totalValue: number;
+}
+
+export interface InventoryValuation {
+  totalValue: number;
+  items: InventoryValuationItem[];
+}
+
+export interface ReorderSuggestion {
+  productId: number;
+  name: string;
+  currentQty: number;
+  reorderLevel: number;
+  suggestedQty: number;
+}
+
+export type GetInventoryParams = {
+  warehouseId?: number;
+  lowStockOnly?: boolean;
+  search?: string;
+};

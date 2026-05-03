@@ -1,8 +1,8 @@
-import { useGetDashboardStats, useGetMonthlyRevenue, useGetTopCustomers, useListInvoices } from "@workspace/api-client-react";
+import { useGetDashboardStats, useGetMonthlyRevenue, useGetTopCustomers, useListInvoices, useGetReorderSuggestions } from "@workspace/api-client-react";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, ArrowUpRight, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { Plus, Users, ArrowUpRight, AlertCircle, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import { Link } from "wouter";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { StatusBadge } from "@/components/status-badge";
@@ -11,7 +11,8 @@ export default function Dashboard() {
   const { data: stats } = useGetDashboardStats();
   const { data: revenue } = useGetMonthlyRevenue();
   const { data: topCustomers } = useGetTopCustomers();
-  const { data: recentInvoices } = useListInvoices({ status: undefined }); // Assuming limit handled in UI for simplicity if API doesn't support limit param
+  const { data: recentInvoices } = useListInvoices({ status: undefined });
+  const { data: reorderItems = [] } = useGetReorderSuggestions();
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8 animate-in fade-in duration-500">
@@ -91,6 +92,44 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* LOW STOCK ALERT */}
+      {reorderItems.length > 0 && (
+        <Card className="rounded-2xl shadow-sm border-yellow-200 dark:border-yellow-800 bg-yellow-50/50 dark:bg-yellow-900/10">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-yellow-600" />
+              <CardTitle className="font-display text-yellow-800 dark:text-yellow-400">
+                Low Stock Alert ({reorderItems.length})
+              </CardTitle>
+            </div>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/inventory">View Inventory</Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-yellow-200/50 dark:divide-yellow-800/30">
+              {reorderItems.slice(0, 4).map((item) => (
+                <div key={item.productId} className="flex items-center justify-between px-6 py-3">
+                  <div>
+                    <p className="font-medium text-sm">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">Reorder at: {item.reorderLevel}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-yellow-700 dark:text-yellow-400">{item.currentQty} left</p>
+                    <p className="text-xs text-muted-foreground">Order: {item.suggestedQty}</p>
+                  </div>
+                </div>
+              ))}
+              {reorderItems.length > 4 && (
+                <div className="px-6 py-2 text-xs text-center text-muted-foreground">
+                  +{reorderItems.length - 4} more items need restocking
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* RECENT INVOICES */}
       <Card className="rounded-2xl shadow-sm border-border/50">

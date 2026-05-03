@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, sql, and } from "drizzle-orm";
-import { db, invoicesTable, invoiceItemsTable, businessProfilesTable, paymentsTable } from "@workspace/db";
+import { db, invoicesTable, invoiceItemsTable, businessProfilesTable, paymentsTable, productsTable, warehouseStockTable, stockMovementsTable, warehousesTable } from "@workspace/db";
 import {
   CreateInvoiceBody,
   UpdateInvoiceBody,
@@ -57,6 +57,80 @@ async function getInvoiceWithItems(id: number, userId: string) {
     .orderBy(desc(paymentsTable.createdAt));
 
   return { ...invoice, items, payments };
+}
+
+async function deductStockForItems(
+  items: Array<{ productId?: number | null; quantity: number }>,
+  userId: string,
+  invoiceId: number,
+  date: string,
+) {
+  const productIds = items.filter((i) => i.productId).map((i) => i.productId!);
+  if (productIds.length === 0) return;
+
+  const products = await db
+    .select({ id: productsTable.id, trackInventory: productsTable.trackInventory })
+    .from(productsTable)
+    .where(sql`id = ANY(${productIds})`);
+
+  const trackableIds = new Set(products.filter((p) => p.trackInventory).map((p) => p.id));
+  if (trackableIds.size === 0) return;
+
+  const [defWh] = await db
+    .select()
+    .from(warehousesTable)
+    .where(and(eq(warehousesTable.userId, userId), eq(warehousesTable.isDefault, true)))
+    .limit(1);
+
+  const warehouseId = defWh?.id;
+  if (!warehouseId) return;
+
+  for (const item of items) {
+    if (!item.productId || !trackableIds.has(item.productId)) continue;
+
+    const [existing] = await db
+      .select()
+      .from(warehouseStockTable)
+      .where(
+        and(
+          eq(warehouseStockTable.productId, item.productId),
+          eq(warehouseStockTable.warehouseId, warehouseId),
+          eq(warehouseStockTable.userId, userId),
+        ),
+      );
+
+    const prevQty = existing?.quantity ?? 0;
+    const newQty = Math.max(0, prevQty - item.quantity);
+
+    if (existing) {
+      await db
+        .update(warehouseStockTable)
+        .set({ quantity: newQty })
+        .where(eq(warehouseStockTable.id, existing.id));
+    } else {
+      await db.insert(warehouseStockTable).values({
+        userId,
+        productId: item.productId,
+        warehouseId,
+        quantity: 0,
+        avgCost: 0,
+      });
+    }
+
+    await db.insert(stockMovementsTable).values({
+      userId,
+      productId: item.productId,
+      warehouseId,
+      type: "out",
+      quantity: item.quantity,
+      beforeQty: prevQty,
+      afterQty: newQty,
+      refType: "invoice",
+      refId: invoiceId,
+      notes: null,
+      date,
+    });
+  }
 }
 
 async function recalcPaidAmount(invoiceId: number, userId: string) {
@@ -198,6 +272,13 @@ router.post("/invoices", requireAuth, async (req, res): Promise<void> => {
       }))
     );
   }
+
+  await deductStockForItems(
+    safeItems.map((i) => ({ productId: i.productId ?? null, quantity: i.quantity })),
+    req.userId,
+    invoice.id,
+    invoiceData.invoiceDate,
+  );
 
   const result = await getInvoiceWithItems(invoice.id, req.userId);
   res.status(201).json(GetInvoiceResponse.parse(result));

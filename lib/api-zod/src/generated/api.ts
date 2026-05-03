@@ -224,6 +224,10 @@ export const ListProductsResponseItem = zod.object({
   unit: zod.string(),
   hsnCode: zod.string().nullish(),
   taxRate: zod.number(),
+  trackInventory: zod.boolean(),
+  reorderLevel: zod.number(),
+  costPrice: zod.number().nullish(),
+  currentStock: zod.number(),
   createdAt: zod.date(),
 });
 export const ListProductsResponse = zod.array(ListProductsResponseItem);
@@ -238,6 +242,9 @@ export const CreateProductBody = zod.object({
   unit: zod.string(),
   hsnCode: zod.string().optional(),
   taxRate: zod.number().optional(),
+  trackInventory: zod.boolean().optional(),
+  reorderLevel: zod.number().optional(),
+  costPrice: zod.number().optional(),
 });
 
 /**
@@ -254,6 +261,9 @@ export const UpdateProductBody = zod.object({
   unit: zod.string().optional(),
   hsnCode: zod.string().optional(),
   taxRate: zod.number().optional(),
+  trackInventory: zod.boolean().optional(),
+  reorderLevel: zod.number().optional(),
+  costPrice: zod.number().optional(),
 });
 
 export const UpdateProductResponse = zod.object({
@@ -264,6 +274,10 @@ export const UpdateProductResponse = zod.object({
   unit: zod.string(),
   hsnCode: zod.string().nullish(),
   taxRate: zod.number(),
+  trackInventory: zod.boolean(),
+  reorderLevel: zod.number(),
+  costPrice: zod.number().nullish(),
+  currentStock: zod.number(),
   createdAt: zod.date(),
 });
 
@@ -796,3 +810,297 @@ export const GetTopCustomersResponseItem = zod.object({
   invoiceCount: zod.number(),
 });
 export const GetTopCustomersResponse = zod.array(GetTopCustomersResponseItem);
+
+// ─── Vendors ──────────────────────────────────────────────────────────────────
+
+export const ListVendorsQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+});
+
+export const VendorSchema = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  businessName: zod.string().nullish(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  address: zod.string().nullish(),
+  city: zod.string().nullish(),
+  state: zod.string().nullish(),
+  gstin: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.date(),
+});
+export const ListVendorsResponse = zod.array(VendorSchema);
+
+export const GetVendorParams = zod.object({ id: zod.coerce.number() });
+
+export const CreateVendorBody = zod.object({
+  name: zod.string(),
+  businessName: zod.string().optional(),
+  email: zod.string().optional(),
+  phone: zod.string().optional(),
+  address: zod.string().optional(),
+  city: zod.string().optional(),
+  state: zod.string().optional(),
+  gstin: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateVendorParams = zod.object({ id: zod.coerce.number() });
+export const UpdateVendorBody = zod.object({
+  name: zod.string().optional(),
+  businessName: zod.string().optional(),
+  email: zod.string().optional(),
+  phone: zod.string().optional(),
+  address: zod.string().optional(),
+  city: zod.string().optional(),
+  state: zod.string().optional(),
+  gstin: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+export const UpdateVendorResponse = VendorSchema;
+export const DeleteVendorParams = zod.object({ id: zod.coerce.number() });
+
+// ─── Warehouses ───────────────────────────────────────────────────────────────
+
+export const WarehouseSchema = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  location: zod.string().nullish(),
+  isDefault: zod.boolean(),
+  createdAt: zod.date(),
+});
+export const ListWarehousesResponse = zod.array(WarehouseSchema);
+
+export const CreateWarehouseBody = zod.object({
+  name: zod.string(),
+  location: zod.string().optional(),
+  isDefault: zod.boolean().optional(),
+});
+
+export const UpdateWarehouseParams = zod.object({ id: zod.coerce.number() });
+export const UpdateWarehouseBody = zod.object({
+  name: zod.string().optional(),
+  location: zod.string().optional(),
+  isDefault: zod.boolean().optional(),
+});
+export const DeleteWarehouseParams = zod.object({ id: zod.coerce.number() });
+
+// ─── Purchase Orders ──────────────────────────────────────────────────────────
+
+const PoItemSchema = zod.object({
+  id: zod.number(),
+  poId: zod.number(),
+  productId: zod.number().nullish(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  hsnCode: zod.string().nullish(),
+  quantity: zod.number(),
+  receivedQty: zod.number(),
+  unit: zod.string(),
+  rate: zod.number(),
+  taxRate: zod.number(),
+  amount: zod.number(),
+});
+
+const PoItemInputSchema = zod.object({
+  productId: zod.number().optional(),
+  name: zod.string(),
+  description: zod.string().optional(),
+  hsnCode: zod.string().optional(),
+  quantity: zod.number(),
+  unit: zod.string(),
+  rate: zod.number(),
+  taxRate: zod.number().optional(),
+  amount: zod.number(),
+});
+
+export const ListPurchaseOrdersQueryParams = zod.object({
+  status: zod.enum(["draft", "sent", "partial", "received", "cancelled"]).optional(),
+  vendorId: zod.coerce.number().optional(),
+  search: zod.coerce.string().optional(),
+});
+
+export const ListPurchaseOrdersResponseItem = zod.object({
+  id: zod.number(),
+  vendorId: zod.number().nullish(),
+  vendorName: zod.string().nullish(),
+  poNumber: zod.string(),
+  poDate: zod.string(),
+  expectedDate: zod.string().nullish(),
+  status: zod.enum(["draft", "sent", "partial", "received", "cancelled"]),
+  total: zod.number(),
+  createdAt: zod.date(),
+});
+export const ListPurchaseOrdersResponse = zod.array(ListPurchaseOrdersResponseItem);
+
+export const GetPurchaseOrderParams = zod.object({ id: zod.coerce.number() });
+
+export const GetPurchaseOrderResponse = zod.object({
+  id: zod.number(),
+  vendorId: zod.number().nullish(),
+  vendorName: zod.string().nullish(),
+  vendorGstin: zod.string().nullish(),
+  poNumber: zod.string(),
+  poDate: zod.string(),
+  expectedDate: zod.string().nullish(),
+  status: zod.enum(["draft", "sent", "partial", "received", "cancelled"]),
+  warehouseId: zod.number().nullish(),
+  notes: zod.string().nullish(),
+  subtotal: zod.number(),
+  taxPercent: zod.number(),
+  taxAmount: zod.number(),
+  total: zod.number(),
+  items: zod.array(PoItemSchema),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+export const CreatePurchaseOrderBody = zod.object({
+  vendorId: zod.number().optional(),
+  vendorName: zod.string().optional(),
+  vendorGstin: zod.string().optional(),
+  poNumber: zod.string(),
+  poDate: zod.string(),
+  expectedDate: zod.string().optional(),
+  status: zod.enum(["draft", "sent", "partial", "received", "cancelled"]).optional(),
+  warehouseId: zod.number().optional(),
+  notes: zod.string().optional(),
+  taxPercent: zod.number().optional(),
+  items: zod.array(PoItemInputSchema),
+});
+
+export const UpdatePurchaseOrderParams = zod.object({ id: zod.coerce.number() });
+export const UpdatePurchaseOrderBody = zod.object({
+  vendorId: zod.number().optional(),
+  vendorName: zod.string().optional(),
+  vendorGstin: zod.string().optional(),
+  poNumber: zod.string().optional(),
+  poDate: zod.string().optional(),
+  expectedDate: zod.string().optional(),
+  status: zod.enum(["draft", "sent", "partial", "received", "cancelled"]).optional(),
+  warehouseId: zod.number().optional(),
+  notes: zod.string().optional(),
+  taxPercent: zod.number().optional(),
+  items: zod.array(PoItemInputSchema).optional(),
+});
+export const UpdatePurchaseOrderResponse = GetPurchaseOrderResponse;
+export const DeletePurchaseOrderParams = zod.object({ id: zod.coerce.number() });
+
+export const GetNextPoNumberResponse = zod.object({
+  poNumber: zod.string(),
+  number: zod.number(),
+});
+
+export const ReceivePurchaseOrderParams = zod.object({ id: zod.coerce.number() });
+export const ReceivePurchaseOrderBody = zod.object({
+  warehouseId: zod.number().optional(),
+  receivedDate: zod.string().optional(),
+  items: zod.array(zod.object({
+    itemId: zod.number(),
+    receivedQty: zod.number(),
+  })),
+  notes: zod.string().optional(),
+});
+
+// ─── Stock Movements ──────────────────────────────────────────────────────────
+
+export const StockMovementSchema = zod.object({
+  id: zod.number(),
+  productId: zod.number(),
+  productName: zod.string().nullish(),
+  warehouseId: zod.number().nullish(),
+  warehouseName: zod.string().nullish(),
+  type: zod.enum(["in", "out", "adjustment", "transfer"]),
+  quantity: zod.number(),
+  beforeQty: zod.number(),
+  afterQty: zod.number(),
+  refType: zod.string().nullish(),
+  refId: zod.number().nullish(),
+  notes: zod.string().nullish(),
+  date: zod.string(),
+  createdAt: zod.date(),
+});
+export const ListStockMovementsResponse = zod.array(StockMovementSchema);
+
+export const ListStockMovementsQueryParams = zod.object({
+  productId: zod.coerce.number().optional(),
+  warehouseId: zod.coerce.number().optional(),
+  type: zod.enum(["in", "out", "adjustment", "transfer"]).optional(),
+  startDate: zod.string().optional(),
+  endDate: zod.string().optional(),
+});
+
+export const CreateStockAdjustmentBody = zod.object({
+  productId: zod.number(),
+  warehouseId: zod.number().optional(),
+  type: zod.enum(["in", "out", "adjustment"]),
+  quantity: zod.number(),
+  date: zod.string(),
+  notes: zod.string().optional(),
+});
+
+export const CreateStockTransferBody = zod.object({
+  productId: zod.number(),
+  fromWarehouseId: zod.number(),
+  toWarehouseId: zod.number(),
+  quantity: zod.number(),
+  date: zod.string(),
+  notes: zod.string().optional(),
+});
+
+// ─── Inventory ────────────────────────────────────────────────────────────────
+
+export const WarehouseStockBreakdownItem = zod.object({
+  warehouseId: zod.number(),
+  warehouseName: zod.string(),
+  quantity: zod.number(),
+  avgCost: zod.number(),
+});
+
+export const InventoryProductItem = zod.object({
+  productId: zod.number(),
+  name: zod.string(),
+  hsnCode: zod.string().nullish(),
+  unit: zod.string(),
+  reorderLevel: zod.number(),
+  costPrice: zod.number().nullish(),
+  totalQty: zod.number(),
+  avgCost: zod.number(),
+  totalValue: zod.number(),
+  isLowStock: zod.boolean(),
+  warehouseBreakdown: zod.array(WarehouseStockBreakdownItem),
+});
+
+export const GetInventoryOverviewQueryParams = zod.object({
+  warehouseId: zod.coerce.number().optional(),
+  lowStockOnly: zod.coerce.boolean().optional(),
+  search: zod.coerce.string().optional(),
+});
+
+export const GetInventoryOverviewResponse = zod.object({
+  totalProducts: zod.number(),
+  totalValue: zod.number(),
+  lowStockCount: zod.number(),
+  outOfStockCount: zod.number(),
+  items: zod.array(InventoryProductItem),
+});
+
+export const GetInventoryValuationResponse = zod.object({
+  totalValue: zod.number(),
+  items: zod.array(zod.object({
+    productId: zod.number(),
+    name: zod.string(),
+    totalQty: zod.number(),
+    avgCost: zod.number(),
+    totalValue: zod.number(),
+  })),
+});
+
+export const GetReorderSuggestionsResponse = zod.array(zod.object({
+  productId: zod.number(),
+  name: zod.string(),
+  currentQty: zod.number(),
+  reorderLevel: zod.number(),
+  suggestedQty: zod.number(),
+}));
